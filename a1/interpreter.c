@@ -52,10 +52,15 @@ int interpreter(char* command_args[], int args_size){
 		//set
 		if (args_size != 3) return badcommand();	
 		return set(command_args[1], command_args[2]);
+
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
 		return print(command_args[1]);
+
+	} else if (strcmp(command_args[0], "echo")==0) {
+		if (args_size != 2) return badcommand();
+		return echo(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
