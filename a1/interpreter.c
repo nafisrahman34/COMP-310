@@ -94,6 +94,15 @@ int set(char* var, char* value){
 
 }
 
+int echo(char* var) {
+    if (var[0] == '$') {
+        printf("%s\n", var + 1);
+    } else {
+        printf("%s\n", var);
+    }
+    return 0;
+}
+
 int print(char* var){
 	printf("%s\n", mem_get_value(var)); 
 	return 0;
