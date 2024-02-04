@@ -6,7 +6,7 @@
 #include "shellmemory.h"
 #include "shell.h"
 
-int MAX_ARGS_SIZE = 3;
+int MAX_ARGS_SIZE = 8;
 
 int badcommand(){
 	printf("%s\n", "Unknown Command");
@@ -22,6 +22,7 @@ int badcommandFileDoesNotExist(){
 int help();
 int quit();
 int set(char* var, char* value);
+int echo(char* var);
 int print(char* var);
 int run(char* script);
 int badcommandFileDoesNotExist();
@@ -50,9 +51,20 @@ int interpreter(char* command_args[], int args_size){
 
 	} else if (strcmp(command_args[0], "set")==0) {
 		//set
-		if (args_size != 3) return badcommand();	
-		return set(command_args[1], command_args[2]);
-
+		if (args_size < 3 || args_size > 7){
+			printf("%s\n","Bad command: set");	
+		}
+		else{
+			char value[1000] = "";
+			strcpy(value, command_args[2]);
+			if(args_size > 3){
+				for(int i = 3; i<args_size; i++){
+					strcat(value, " ");
+					strcat(value, command_args[i]);
+				}
+			}		
+			return set(command_args[1], value);
+		}
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
@@ -87,16 +99,8 @@ int quit(){
 }
 
 int set(char* var, char* value){
-	char *link = "=";
-	char buffer[1000];
-	strcpy(buffer, var);
-	strcat(buffer, link);
-	strcat(buffer, value);
-
 	mem_set_value(var, value);
-
 	return 0;
-
 }
 
 int echo(char* var) {
