@@ -163,12 +163,16 @@ int my_mkdir(char *dirname) {
 
 int my_cd(char* dirname) {
     struct stat info;
-	int errCode = chdir(dirname);
+	
     if (stat(dirname, &info) == 0 && S_ISDIR(info.st_mode)) {
-		
+		int errCode = chdir(dirname);
         if (errCode == 0) {
             return 0; 
         } 
+		else {
+            perror("chdir"); 
+            return -1; 
+        }
     }
     printf("%s\n", "Bad command: my_cd");
 	return 2;
