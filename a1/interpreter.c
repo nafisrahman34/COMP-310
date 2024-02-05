@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <unistd.h> 
+#include <unistd.h> 
 #include <sys/stat.h> 
 #include "shellmemory.h"
 #include "shell.h"
@@ -25,6 +25,8 @@ int set(char* var, char* value);
 int echo(char* var);
 int print(char* var);
 int run(char* script);
+int my_cd(char* dirname);
+int my_mkdir(char *dirname);
 int badcommandFileDoesNotExist();
 
 // Interpret commands and their arguments
@@ -139,6 +141,7 @@ int my_mkdir(char *dirname) {
             directory = value;
         } else {
             printf("%s\n", "Bad command: my_mkdir");;
+			return -1;
         }
     }
 
@@ -154,8 +157,8 @@ int my_cd(char* dirname) {
     struct stat info;
 
     if (stat(dirname, &info) == 0 && S_ISDIR(info.st_mode)) {
-    
-        if (chdir(dirname) == 0) {
+		int errCode = chdir(dirname);
+        if (errCode == 0) {
             return 0; 
         } else {
             perror("chdir"); 
