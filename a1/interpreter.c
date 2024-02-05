@@ -104,13 +104,25 @@ int set(char* var, char* value){
 }
 
 int echo(char* var) {
+    if (var == NULL || strlen(var) == 0) {
+        printf("Error: Invalid variable name\n");
+        return -1;
+    }
+
     if (var[0] == '$') {
-        printf("%s\n", var + 1);
+        char* value = mem_get_value(var + 1); 
+        if (value != NULL) {
+            printf("%s\n", value);
+        } else {
+            printf("Variable %s not found\n", var + 1);
+        }
     } else {
         printf("%s\n", var);
     }
+
     return 0;
 }
+
 
 int print(char* var){
 	printf("%s\n", mem_get_value(var)); 
