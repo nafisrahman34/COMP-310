@@ -71,7 +71,7 @@ int interpreter(char* command_args[], int args_size){
 		return print(command_args[1]);
 
 	} else if (strcmp(command_args[0], "echo")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size > 2) return badcommand();
 		return echo(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
@@ -105,7 +105,7 @@ int set(char* var, char* value){
 
 int echo(char* var) {
     if (var[0] == '$') {
-        printf("%s\n", var + 1);
+        printf(++var);
     } else {
         printf("%s\n", var);
     }
