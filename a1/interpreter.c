@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 //#include <unistd.h> 
-//#include <sys/stat.h> // these could be useful?
+#include <sys/stat.h> 
 #include "shellmemory.h"
 #include "shell.h"
 
@@ -75,7 +75,7 @@ int interpreter(char* command_args[], int args_size){
 		return echo(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size > 2) return badcommand();
 		return echo(command_args[1]);
 		
 	} else if (strcmp(command_args[0], "run")==0) {
@@ -144,6 +144,23 @@ int my_mkdir(char *dirname) {
     int errCode = system(command);
 
     return errCode;
+}
+
+int my_cd(char* dirname) {
+    struct stat info;
+
+    if (stat(dirname, &info) == 0 && S_ISDIR(info.st_mode)) {
+    
+        if (chdir(dirname) == 0) {
+            return 0; 
+        } else {
+            perror("chdir"); 
+            return -1; 
+        }
+    }
+
+    printf("%s\n", "Bad command: my_cd");
+	return -1;
 }
 
 int print(char* var){
