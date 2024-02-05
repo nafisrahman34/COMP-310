@@ -27,6 +27,7 @@ int print(char* var);
 int run(char* script);
 int my_cd(char* dirname);
 int my_mkdir(char *dirname);
+int my_ls();
 int badcommandFileDoesNotExist();
 
 // Interpret commands and their arguments
@@ -79,6 +80,10 @@ int interpreter(char* command_args[], int args_size){
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
 		if (args_size != 2) return badcommand();
 		return my_mkdir(command_args[1]);
+
+	} else if (strcmp(command_args[0], "my_ls")==0) {
+		if (args_size != 1) return badcommand();
+		return my_ls();
 
 	} else if (strcmp(command_args[0], "my_cd")==0) {
 		if (args_size != 2) return badcommand();
@@ -155,6 +160,7 @@ int my_mkdir(char *dirname) {
 }
 
 
+
 int my_cd(char* dirname) {
     struct stat info;
 
@@ -175,6 +181,16 @@ int print(char* var){
 	printf("%s\n", mem_get_value(var)); 
 	return 0;
 }
+
+
+int my_ls() {
+
+    const char* command = "ls | sort";
+    int errCode = system(command);
+
+    return errCode;
+}
+
 
 int run(char* script){
 	int errCode = 0;
