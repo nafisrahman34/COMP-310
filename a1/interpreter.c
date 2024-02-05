@@ -78,7 +78,7 @@ int interpreter(char* command_args[], int args_size){
 		return echo(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size > 2) return badcommand();
 		return my_mkdir(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_ls")==0) {
@@ -86,7 +86,7 @@ int interpreter(char* command_args[], int args_size){
 		return my_ls();
 
 	} else if (strcmp(command_args[0], "my_cd")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size > 2) return badcommand();
 		return my_cd(command_args[1]);
 		
 	} else if (strcmp(command_args[0], "run")==0) {
@@ -163,18 +163,15 @@ int my_mkdir(char *dirname) {
 
 int my_cd(char* dirname) {
     struct stat info;
-
+	int errCode = chdir(dirname);
     if (stat(dirname, &info) == 0 && S_ISDIR(info.st_mode)) {
-		int errCode = chdir(dirname);
+		
         if (errCode == 0) {
             return 0; 
-        } else {
-            perror("chdir"); 
-            return -1; 
-        }
+        } 
     }
     printf("%s\n", "Bad command: my_cd");
-	return -1;
+	return 2;
 }
 
 int print(char* var){
