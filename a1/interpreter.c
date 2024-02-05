@@ -63,6 +63,7 @@ int interpreter(char* command_args[], int args_size){
 					strcat(value, command_args[i]);
 				}
 			}		
+			free(value);
 			return set(command_args[1], value);
 		}
 	
@@ -105,7 +106,7 @@ int set(char* var, char* value){
 
 int echo(char* var) {
     if (var[0] == '$') {
-        printf(++var);
+        printf("%s\n", var + 1);
     } else {
         printf("%s\n", var);
     }
