@@ -140,18 +140,20 @@ int my_mkdir(char *dirname) {
         if (value != NULL && strchr(value, ' ') == NULL) {
             directory = value;
         } else {
-            printf("%s\n", "Bad command: my_mkdir");;
-			return -1;
+            printf("%s\n", "Bad command: my_mkdir");
+            return -1; 
         }
     }
 
-    char command[MAX_ARGS_SIZE];
-    snprintf(command, MAX_ARGS_SIZE, "mkdir \"%s\"", directory);
+    int namelen = strlen(directory);
+    char command[7 + namelen + 1]; 
+    snprintf(command, sizeof(command), "mkdir %s", directory); 
 
     int errCode = system(command);
 
     return errCode;
 }
+
 
 int my_cd(char* dirname) {
     struct stat info;
