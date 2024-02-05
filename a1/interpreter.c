@@ -63,7 +63,6 @@ int interpreter(char* command_args[], int args_size){
 					strcat(value, command_args[i]);
 				}
 			}		
-			free(value);
 			return set(command_args[1], value);
 		}
 	
@@ -72,7 +71,7 @@ int interpreter(char* command_args[], int args_size){
 		return print(command_args[1]);
 
 	} else if (strcmp(command_args[0], "echo")==0) {
-		if (args_size > 2) return badcommand();
+		if (args_size != 2) return badcommand();
 		return echo(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
