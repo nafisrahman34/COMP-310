@@ -75,8 +75,12 @@ int interpreter(char* command_args[], int args_size){
 		return echo(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
-		if (args_size > 2) return badcommand();
-		return echo(command_args[1]);
+		if (args_size != 2) return badcommand();
+		return my_mkdir(command_args[1]);
+
+	} else if (strcmp(command_args[0], "my_cd")==0) {
+		if (args_size != 2) return badcommand();
+		return my_cd(command_args[1]);
 		
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
@@ -158,7 +162,6 @@ int my_cd(char* dirname) {
             return -1; 
         }
     }
-
     printf("%s\n", "Bad command: my_cd");
 	return -1;
 }
