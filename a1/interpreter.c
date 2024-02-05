@@ -73,7 +73,11 @@ int interpreter(char* command_args[], int args_size){
 	} else if (strcmp(command_args[0], "echo")==0) {
 		if (args_size != 2) return badcommand();
 		return echo(command_args[1]);
-	
+
+	} else if (strcmp(command_args[0], "my_mkdir")==0) {
+		if (args_size != 2) return badcommand();
+		return echo(command_args[1]);
+		
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
 		return run(command_args[1]);
@@ -105,7 +109,7 @@ int set(char* var, char* value){
 
 int echo(char* var) {
     if (var == NULL || strlen(var) == 0) {
-        printf("Error: Invalid variable name\n");
+        printf("Invalid variable name\n");
         return -1;
     }
 
@@ -122,7 +126,25 @@ int echo(char* var) {
 
     return 0;
 }
+int my_mkdir(char *dirname) {
+    char* directory = dirname;
 
+    if (dirname[0] == '$') {
+        char *value = mem_get_value(dirname + 1); 
+        if (value != NULL && strchr(value, ' ') == NULL) {
+            directory = value;
+        } else {
+            printf("%s\n", "Bad command: my_mkdir");;
+        }
+    }
+
+    char command[MAX_ARGS_SIZE];
+    snprintf(command, MAX_ARGS_SIZE, "mkdir \"%s\"", directory);
+
+    int errCode = system(command);
+
+    return errCode;
+}
 
 int print(char* var){
 	printf("%s\n", mem_get_value(var)); 
