@@ -10,6 +10,7 @@ int MAX_ARGS_SIZE = 8;
 int badcommandFileDoesNotExist();
 int echo(char* var);
 int help();
+int my_cat(char* filename);
 int my_cd(char* dirname);
 int my_ls();
 int my_mkdir(char *dirname);
@@ -92,6 +93,10 @@ int interpreter(char* command_args[], int args_size){
 	} else if(strcmp(command_args[0], "my_touch")==0) {
 		if(args_size != 2) return badcommand();
 		return my_touch(command_args[1]);
+
+	} else if(strcmp(command_args[0], "my_cat")==0) {
+		if(args_size != 2) return badcommand();
+		return my_cat(command_args[1]);
 
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
@@ -209,6 +214,22 @@ int my_touch(char* filename){
 	strcat(command, file);
 	int errCode = system(command);
 	return errCode;
+}
+
+int my_cat(char* filename){
+	FILE *file;
+	file = fopen(filename, "r");
+	if(!file){
+		printf("%s\n", "Bad command: my_cat");
+		return 0;
+	}
+	char pointer = fgetc(file);
+	while(pointer != EOF){
+		printf("%c", pointer);
+		pointer = fgetc(file);
+	}
+	fclose(file);
+	return 1;
 }
 
 
