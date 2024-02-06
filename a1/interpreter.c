@@ -127,25 +127,23 @@ int set(char* var, char* value){
 	return 0;
 }
 
-int echo(char* var) {
-    if (var == NULL || strlen(var) == 0) {
-        printf("Invalid variable name\n");
-        return -1;
-    }
 
+
+int echo(char* var) {
     if (var[0] == '$') {
-        char* value = mem_get_value(var + 1); 
+        char *value = mem_get_value(var + 1); 
         if (value != NULL) {
-            printf("%s\n", value);
+            printf("%s\n", value); 
         } else {
-            printf("Variable %s not found\n", var + 1);
+            printf("\n"); 
         }
     } else {
-        printf("%s\n", var);
+        printf("%s\n", var); 
     }
-
     return 0;
 }
+
+
 int my_mkdir(char *dirname) {
     char* directory = dirname;
 
