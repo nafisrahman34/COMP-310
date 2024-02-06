@@ -7,6 +7,17 @@
 #include "shell.h"
 
 int MAX_ARGS_SIZE = 8;
+int badcommandFileDoesNotExist();
+int echo(char* var);
+int help();
+int my_cd(char* dirname);
+int my_ls();
+int my_mkdir(char *dirname);
+int my_touch(char* filename);
+int print(char* var);
+int quit();
+int run(char* script);
+int set(char* var, char* value);
 
 int badcommand(){
 	printf("%s\n", "Unknown Command");
@@ -18,17 +29,6 @@ int badcommandFileDoesNotExist(){
 	printf("%s\n", "Bad command: File not found");
 	return 3;
 }
-
-int help();
-int quit();
-int set(char* var, char* value);
-int echo(char* var);
-int print(char* var);
-int run(char* script);
-int my_cd(char* dirname);
-int my_mkdir(char *dirname);
-int my_ls();
-int badcommandFileDoesNotExist();
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -89,6 +89,10 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size > 2) return badcommand();
 		return my_cd(command_args[1]);
 		
+	} else if(strcmp(command_args[0], "my_touch")==0) {
+		if(args_size != 2) return badcommand();
+		return my_touch(command_args[1]);
+
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
 		return run(command_args[1]);
@@ -185,11 +189,26 @@ int print(char* var){
 
 
 int my_ls() {
-
     const char* command = "ls | sort";
     int errCode = system(command);
-
     return errCode;
+}
+
+int my_touch(char* filename){
+	char* file = filename;
+	if (filename[0] == '$') {
+        char *value = mem_get_value(filename + 1); 
+        if (value != NULL && strchr(value, ' ') == NULL) {
+            file = value;
+        } else {
+            printf("%s\n", "Bad command: my_touch");
+            return -1; 
+        }
+    }
+	char command[106] = "touch ";
+	strcat(command, file);
+	int errCode = system(command);
+	return errCode;
 }
 
 
