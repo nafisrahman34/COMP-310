@@ -239,7 +239,17 @@ int my_cat(char* filename){
 //delete a file in the existing directory
 //OPTIONAL QUESTION #9
 int my_delete(char* filename){
-	if(remove(filename) != 0){
+	char* file = filename;
+	if (filename[0] == '$') {
+        char *value = mem_get_value(filename + 1); 
+        if (value != NULL && strchr(value, ' ') == NULL) {
+            file = value;
+        } else {
+            printf("%s\n", "Bad command: my_delete");
+            return -1; 
+        }
+    }
+	if(remove(file) != 0){
 		//prints failure message if file with corresponding filename does not exist in current directory
 		printf("%s\n", "Bad command: my_delete");
 		return 0;
