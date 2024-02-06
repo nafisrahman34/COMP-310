@@ -12,6 +12,7 @@ int echo(char* var);
 int help();
 int my_cat(char* filename);
 int my_cd(char* dirname);
+int my_delete(char* filename);
 int my_ls();
 int my_mkdir(char *dirname);
 int my_touch(char* filename);
@@ -98,6 +99,10 @@ int interpreter(char* command_args[], int args_size){
 		if(args_size != 2) return badcommand();
 		return my_cat(command_args[1]);
 
+	} else if(strcmp(command_args[0], "my_delete")==0) {
+		if(args_size != 2) return badcommand();
+		return my_delete(command_args[1]);
+
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
 		return run(command_args[1]);
@@ -132,10 +137,10 @@ int set(char* var, char* value){
 int echo(char* var) {
     if (var[0] == '$') {
         char *value = mem_get_value(var + 1); 
-        if (value != NULL) {
-            printf("%s\n", value); 
-        } else {
+        if (!strcmp(value, "Variable does not exist")) {
             printf("\n"); 
+        } else {
+            printf("%s\n", value);
         }
     } else {
         printf("%s\n", var); 
@@ -208,6 +213,7 @@ int my_touch(char* filename){
             return -1; 
         }
     }
+	//6 chars for "touch " plus maximum filename length of 100 charcters
 	char command[106] = "touch ";
 	strcat(command, file);
 	int errCode = system(command);
@@ -227,6 +233,17 @@ int my_cat(char* filename){
 		pointer = fgetc(file);
 	}
 	fclose(file);
+	return 1;
+}
+
+//delete a file in the existing directory
+//OPTIONAL QUESTION #9
+int my_delete(char* filename){
+	if(remove(filename) != 0){
+		//prints failure message if file with corresponding filename does not exist in current directory
+		printf("%s\n", "Bad command: my_delete");
+		return 0;
+	}
 	return 1;
 }
 
