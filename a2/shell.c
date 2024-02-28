@@ -11,8 +11,19 @@
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
 
+void createTheBackingStore() {
+    system("rm -rf backing_store");
+    system("mkdir backing_store");
+}
+
+void removeTheBackingStore() {
+    system("rm -rf backing_store");
+}
+
 int main(int argc, char *argv[]) {
 	printf("%s\n", "Shell v2.0\n");
+
+    createTheBackingStore();
 
 	char prompt = '$';  				// Shell prompt
 	char userInput[MAX_USER_INPUT];		// user's input stored here
@@ -74,6 +85,14 @@ int parseInput(char *ui) {
         w++;
         a++; 
     }
+    
     errorCode = interpreter(words, w);
+    if (errorCode == -1) return errorCode; 
+
+    if (strcmp(words[0], "resetmem") == 0) {
+        resetMemory();
+    }
+
     return errorCode;
 }
+

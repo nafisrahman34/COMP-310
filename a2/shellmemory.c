@@ -1,15 +1,29 @@
-#include<stdlib.h>
-#include<string.h>
-#include<stdio.h>
-#include<stdbool.h>
+#include "shell.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SHELL_MEM_LENGTH 1000
+
+#define SHELL_FRAMES (FRAMESIZE / LINES_PER_FRAME)
+#define SHELL_VARS (VARMEMSIZE)
 
 
 struct memory_struct{
 	char *var;
 	char *value;
 };
+
+struct frame_struct {
+    char *lines[LINES_PER_FRAME];
+    int pid;
+    bool empty;
+	int lru
+};
+int num_lru = 0;
+struct memory_struct shellvars[SHELL_VARS];
+struct frame_struct shellframes[SHELL_FRAMES]; 
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
@@ -38,13 +52,20 @@ char *extract(char *model) {
 
 // Shell memory functions
 
-void mem_init(){
-	int i;
-	for (i=0; i<1000; i++){		
-		shellmemory[i].var = "none";
-		shellmemory[i].value = "none";
-	}
+void mem_init() {
+    for (int i = 0; i < SHELL_VARS; i++) {
+        shellvars[i].var = NULL;
+        shellvars[i].value = NULL;
+    }
+
+    for (int i = 0; i < SHELL_FRAMES; ++i) {
+        memset(shellframes[i].lines, 0, LINES_PER_FRAME * sizeof(char*));
+        shellframes[i].pid = -1;
+        shellframes[i].lru = -1;
+        shellframes[i].empty = true;
+    }
 }
+
 
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {

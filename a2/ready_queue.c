@@ -12,7 +12,7 @@
 
 QueueNode *head = NULL;
 
-void ready_queue_destory()
+void ready_queue_destroy()
 {
     if(!head) return;
     QueueNode *cur = head;

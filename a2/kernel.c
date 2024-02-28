@@ -15,28 +15,57 @@ bool active = false;
 bool debug = false;
 bool in_background = false;
 
-int process_initialize(char *filename){
-    FILE* fp;
-    int* start = (int*)malloc(sizeof(int));
-    int* end = (int*)malloc(sizeof(int));
-    
-    fp = fopen(filename, "rt");
-    if(fp == NULL){
-		return FILE_DOES_NOT_EXIST;
-    }
-    int error_code = load_file(fp, start, end, filename);
-    if(error_code != 0){
-        fclose(fp);
-        return FILE_ERROR;
-    }
-    PCB* newPCB = makePCB(*start,*end);
-    QueueNode *node = malloc(sizeof(QueueNode));
-    node->pcb = newPCB;
+int copy_script_to_backing_store(char *filename, int id) {
+    char command[1000];
+    sprintf(command, "cp %s %s/%s.%d", filename, "backing_store", filename, id);
+    return system(command);
+}
 
+int process_initialize(char *filename, int id) {
+    FILE *fp;
+    int error_code = 0;
+
+    fp = fopen(filename, "rt");
+    if (fp == NULL) {
+        return 11;
+    }
+
+    int num_commands = 0;
+    char line[1000];
+    while (readNextCommand(fp, line)) {
+        num_commands++;
+    }
+    fclose(fp);
+
+    error_code = copy_script_to_backing_store(filename, id);
+    if (error_code != 0) {
+        return error_code;
+    }
+
+    char new_filename[1000];
+    sprintf(new_filename, "%s/%s", "backing_store", filename);
+    fp = fopen(new_filename, "rt");
+    if (fp == NULL) {
+        return 11;
+    }
+
+    PCB *pcb = makePCB(fp, num_commands);
+    int frame;
+    for (int i = 0; i < 2 && i * LINES_PER_FRAME < pcb->number_of_commands; ++i) {
+        error_code = load_frame(pcb->pid, fp, &frame);
+        pcb->current_command += LINES_PER_FRAME;
+        if (error_code != 0) {
+            fclose(fp);
+            return error_code;
+        }
+        setFrame(pcb, i, frame);
+    }
+
+    QueueNode *node = malloc(sizeof(QueueNode));
+    node->pcb = pcb;
     ready_queue_add_to_tail(node);
 
-    fclose(fp);
-    return 0;
+    return error_code;
 }
 
 int shell_process_initialize(){
