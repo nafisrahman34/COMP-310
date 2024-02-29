@@ -19,8 +19,9 @@ struct frame_struct {
     char *lines[LINES_PER_FRAME];
     int pid;
     bool empty;
-	int lru
+	int lru;
 };
+
 int num_lru = 0;
 struct memory_struct shellvars[SHELL_VARS];
 struct frame_struct shellframes[SHELL_FRAMES]; 
