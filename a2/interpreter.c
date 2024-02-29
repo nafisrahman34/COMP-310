@@ -160,7 +160,7 @@ run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
 
 int quit(){
 	printf("%s\n", "Bye!");
-	ready_queue_destory();
+	ready_queue_destroy();
 	exit(0);
 }
 

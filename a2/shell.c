@@ -91,3 +91,15 @@ int parseInput(char *ui) {
     return errorCode;
 }
 
+int readNextCommand(FILE *fp, char *command) {
+    int i = 0;
+    char c;
+
+    while ((c = fgetc(fp)) != '\n' && c != EOF) {
+        command[i++] = c;
+    }
+
+    command[i] = '\0';
+
+    return i > 0 || c != EOF;
+}

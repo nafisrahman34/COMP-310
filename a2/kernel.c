@@ -51,15 +51,6 @@ int process_initialize(char *filename, int id) {
 
     PCB *pcb = makePCB(fp, num_commands);
     int frame;
-    for (int i = 0; i < 2 && i * LINES_PER_FRAME < pcb->number_of_commands; ++i) {
-        error_code = load_frame(pcb->pid, fp, &frame);
-        pcb->current_command += LINES_PER_FRAME;
-        if (error_code != 0) {
-            fclose(fp);
-            return error_code;
-        }
-        setFrame(pcb, i, frame);
-    }
 
     QueueNode *node = malloc(sizeof(QueueNode));
     node->pcb = pcb;
