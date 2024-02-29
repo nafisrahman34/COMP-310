@@ -12,14 +12,21 @@
  */
 typedef struct
 {
+    int page_table[100];
     bool priority;
     int pid;
     int PC;
-    int start;
+    int current_command;
+    int number_of_commands; 
     int end;
     int job_length_score;
+    FILE *fp;
+    int start; 
 }PCB;
 
+void freePCB(PCB *pcb);
+void setFrame(PCB *pcb, int frame_index, int frame);
 int generatePID();
-PCB * makePCB(int start, int end);
+PCB * makePCB(FILE *fp, int num_commands);
+
 #endif

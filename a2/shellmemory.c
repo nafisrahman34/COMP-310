@@ -50,6 +50,21 @@ char *extract(char *model) {
 }
 
 
+int resetmem() {
+    for (int i = 0; i < SHELL_VARS; i++) {
+        if (shellvars[i].var != NULL) {
+            free(shellvars[i].var);
+            shellvars[i].var = strdup("none");
+        }
+        if (shellvars[i].value != NULL) {
+            free(shellvars[i].value);
+            shellvars[i].value = strdup("none");
+        }
+    }
+    return 0;
+}
+
+
 // Shell memory functions
 
 void mem_init() {

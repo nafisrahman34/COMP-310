@@ -33,6 +33,8 @@ int handle_error(enum Error error_code){
 	return error_code;
 }
 
+int reset_memory();
+
 int help();
 int quit();
 int set(char* var, char* value);
@@ -124,6 +126,11 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size > 2) return handle_error(TOO_MANY_TOKENS);
 		return my_cd(command_args[1]);	
 	} 
+	else if (strcmp(command_args[0], "resetmem") == 0) {
+        if (args_size > 1) return handle_error(TOO_MANY_TOKENS);
+        return resetmem();  
+    }
+
 	else if (strcmp(command_args[0], "exec")==0)
 	{
 		if (args_size <= 1) return handle_error(TOO_FEW_TOKENS);
@@ -173,6 +180,8 @@ int print(char* var){
 	printf("%s\n", value); 
 	return 0;
 }
+
+
 
 int echo(char* var){
 	if(var[0] == '$') print(++var);

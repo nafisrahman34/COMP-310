@@ -87,12 +87,7 @@ int parseInput(char *ui) {
     }
     
     errorCode = interpreter(words, w);
-    if (errorCode == -1) return errorCode; 
-
-    if (strcmp(words[0], "resetmem") == 0) {
-        resetMemory();
-    }
-
+    
     return errorCode;
 }
 
