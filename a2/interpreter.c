@@ -33,7 +33,7 @@ int handle_error(enum Error error_code){
 	return error_code;
 }
 
-int reset_memory();
+int resetmem();
 
 int help();
 int quit();
