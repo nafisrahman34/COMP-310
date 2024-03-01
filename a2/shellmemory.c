@@ -5,8 +5,6 @@
 #include <string.h>
 #include "interpreter.h"
 
-#define SHELL_MEM_LENGTH 1000
-
 #define SHELL_FRAMES (FRAMESIZE / LINES_PER_FRAME)
 #define SHELL_VARS (VARMEMSIZE)
 
@@ -27,7 +25,7 @@ int num_lru = 0;
 struct memory_struct shellvars[SHELL_VARS];
 struct frame_struct shellframes[SHELL_FRAMES]; 
 
-struct memory_struct shellmemory[SHELL_MEM_LENGTH];
+struct memory_struct shellmemory[SHELL_VARS + SHELL_FRAMES];
 
 // Helper functions
 int match(char *model, char *var) {
@@ -122,7 +120,7 @@ char *mem_get_value(char *var_in) {
 
 void printShellMemory(){
 	int count_empty = 0;
-	for (int i = 0; i < SHELL_MEM_LENGTH; i++){
+	for (int i = 0; i < SHELL_VARS + SHELL_FRAMES; i++){
 		if(strcmp(shellmemory[i].var,"none") == 0){
 			count_empty++;
 		}
@@ -130,7 +128,7 @@ void printShellMemory(){
 			printf("\nline %d: key: %s\t\tvalue: %s\n", i, shellmemory[i].var, shellmemory[i].value);
 		}
     }
-	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
+	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_VARS + SHELL_FRAMES, SHELL_VARS + SHELL_FRAMES-count_empty, count_empty);
 }
 
 
@@ -162,7 +160,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 	size_t candidate;
 	while(flag){
 		flag = false;
-		for (i; i < SHELL_MEM_LENGTH; i++){
+		for (i; i < SHELL_VARS + SHELL_FRAMES; i++){
 			if(strcmp(shellmemory[i].var,"none") == 0){
 				*pStart = (int)i;
 				hasSpaceLeft = true;
@@ -170,7 +168,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 			}
 		}
 		candidate = i;
-		for(i; i < SHELL_MEM_LENGTH; i++){
+		for(i; i < SHELL_VARS + SHELL_FRAMES; i++){
 			if(strcmp(shellmemory[i].var,"none") != 0){
 				flag = true;
 				break;
@@ -184,14 +182,14 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		return error_code;
 	}
     
-    for (size_t j = i; j < SHELL_MEM_LENGTH; j++){
+    for (size_t j = i; j < SHELL_VARS + SHELL_FRAMES; j++){
         if(feof(fp))
         {
             *pEnd = (int)j-1;
             break;
         }else{
-			line = calloc(1, SHELL_MEM_LENGTH);
-			if (fgets(line, SHELL_MEM_LENGTH, fp) == NULL)
+			line = calloc(1, SHELL_VARS + SHELL_FRAMES);
+			if (fgets(line, SHELL_VARS + SHELL_FRAMES, fp) == NULL)
 			{
 				continue;
 			}
@@ -205,7 +203,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 	if(!feof(fp)){
 		error_code = 21;
 		//clean up the file in memory
-		for(int j = 1; i <= SHELL_MEM_LENGTH; i ++){
+		for(int j = 1; i <= SHELL_VARS + SHELL_FRAMES; i ++){
 			shellmemory[j].var = "none";
 			shellmemory[j].value = "none";
     	}
@@ -218,12 +216,12 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 
 
 char * mem_get_value_at_line(int index){
-	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
+	if(index<0 || index > SHELL_VARS + SHELL_FRAMES) return NULL; 
 	return shellmemory[index].value;
 }
 
 void mem_free_lines_between(int start, int end){
-	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){
+	for (int i=start; i<=end && i<SHELL_VARS + SHELL_FRAMES; i++){
 		if(shellmemory[i].var != NULL){
 			free(shellmemory[i].var);
 		}	

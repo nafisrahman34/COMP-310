@@ -23,6 +23,8 @@ void removeTheBackingStore() {
 int main(int argc, char *argv[]) {
 	printf("%s\n", "Shell v2.0\n");
 
+    printf("Frame Store Size = %d; Variable Store Size = %d\n", FRAMESIZE, VARMEMSIZE);
+
     createTheBackingStore();
 
 	char prompt = '$';  				// Shell prompt
