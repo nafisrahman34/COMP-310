@@ -270,7 +270,6 @@ int exec(char *fname1, char *fname2, char *fname3) {
     } 
 	error_code = schedule_by_policy("RR");
 	
-	printf("here");
 	fflush(stdout);
 	if(error_code != 0){
 		return handle_error(error_code);

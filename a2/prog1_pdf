@@ -1,4 +1,2 @@
-echo helloP1
-set x 10
-echo $x
-echo byeP1
+echo P1L1
+echo P1L2

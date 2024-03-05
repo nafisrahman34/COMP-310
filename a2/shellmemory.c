@@ -164,17 +164,20 @@ int findEmptyFrame() {
 	return emptyFrame;
 }
 
-void removeWhitespace(char* output, char* input){
+char* removeWhitespace(char* input){
 	int i=0;
+	char buffer[1000];
 	while(input[i] == ' ' || input[i] == '\t' || input[i] == '\n'){
 		i++;
 	}
 	int x=0;
 	for(int j=i; input[j]!='\0'; j++){
-		output[x] = input[j];
+		buffer[x] = input[j];
 		x++;
 	}
-	output[x] = '\0'; 
+	buffer[x] = '\0';
+	input = buffer;
+	return input;
 }
 
 //loads lines from file into frame store and returns the frame number
@@ -184,22 +187,20 @@ int loadFrame(FILE* fp, int pid){
 	if (emptyFrame == -1){
 		return emptyFrame;
 	}
-	char command[1000];
 	//printf("Inside loadFrame():\n");
+	char command[1000];
 	for(int i=0; i<LINES_PER_FRAME; i++){
 		if(readNextCommand(fp, command)){
-			char trimmedCommand[1000];
-			removeWhitespace(trimmedCommand, command);
-			shellframes[emptyFrame].lines[i] = strdup(trimmedCommand);
+			shellframes[emptyFrame].lines[i] = strdup(removeWhitespace(command));
 			//printf("%s\n",trimmedCommand);
 		}
 		else{
 			shellframes[emptyFrame].lines[i] = NULL;
 		}
 	}
-	for(int i=0; i<LINES_PER_FRAME; i++){
-		printf("%s\n",shellframes[emptyFrame].lines[0]);
-	}
+	// for(int i=0; i<LINES_PER_FRAME; i++){
+	// 	printf("%s\n",shellframes[emptyFrame].lines[i]);
+	// }
 	shellframes[emptyFrame].pid = pid;
 	shellframes[emptyFrame].empty = false;
 	return emptyFrame;
@@ -286,6 +287,12 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     return error_code;
 }
 
+char* getLineFromFrameStore(int pid, int frameIndex, int lineIndex){
+	if(shellframes[frameIndex].pid==pid){
+		return shellframes[frameIndex].lines[lineIndex];
+	}
+	return NULL;
+}
 
 
 char * mem_get_value_at_line(int index){
@@ -293,9 +300,6 @@ char * mem_get_value_at_line(int index){
 	return shellmemory[index].value;
 }
 
-char * mem_get_frame(int index){
-	
-}
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_VARS + SHELL_FRAMES; i++){

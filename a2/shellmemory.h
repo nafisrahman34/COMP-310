@@ -10,4 +10,5 @@ void printShellMemory();
 int loadFrame(FILE* fp, int pid);
 void printFrameStore();
 void printFrame(int frame);
+char* getLineFromFrameStore(int pid, int frameIndex, int lineIndex);
 #endif

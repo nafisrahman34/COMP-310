@@ -91,22 +91,31 @@ int shell_process_initialize(){
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
+    bool output = false;
+    
     for(int i=0; i<quanta; i++){
-        line = mem_get_value_at_line(pcb->PC++);
+        //check if process is finished; return true if finished
+        if(pcb->PC == pcb->number_of_commands){
+            terminate_process(node);
+            in_background = false;
+            output = true;
+            break;
+        }
+        
+        //find frame index and line index for current PC
+        int pageIndex = pcb->PC/LINES_PER_FRAME;
+        int lineIndex = pcb->PC%LINES_PER_FRAME;
+        int frameIndex = pcb->page_table[pageIndex];
+        line = getLineFromFrameStore(pcb->pid, frameIndex, lineIndex);
+        pcb->PC++;
         in_background = true;
         if(pcb->priority) {
             pcb->priority = false;
         }
-        if(pcb->PC>pcb->end){
-            parseInput(line);
-            terminate_process(node);
-            in_background = false;
-            return true;
-        }
         parseInput(line);
         in_background = false;
     }
-    return false;
+    return output;
 }
 
 void *scheduler_FCFS(){
