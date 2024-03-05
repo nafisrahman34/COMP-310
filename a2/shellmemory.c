@@ -87,8 +87,6 @@ void mem_set_value(char *var_in, char *value_in) {
 	int i=0;
     for (i = 0; i < SHELL_VARS; i++) {
         if (shellvars[i].var && strcmp(var_in, shellvars[i].var) == 0) {
-			printf("here\n");
-			fflush(stdout);
             shellvars[i].value = strdup(value_in);
             return;
         }
