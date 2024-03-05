@@ -131,6 +131,79 @@ void printShellMemory(){
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_VARS + SHELL_FRAMES, SHELL_VARS + SHELL_FRAMES-count_empty, count_empty);
 }
 
+void printFrame(int frame){
+	for(int i=0; i<LINES_PER_FRAME; i++){
+		printf("%s\n",shellframes[frame].lines[0]);
+	}
+}
+
+void printFrameStore(){
+	int count_empty = 0;
+	for (int i = 0; i < SHELL_FRAMES; i++){
+		if(shellframes[i].empty!=0) {
+			count_empty++;
+		}
+		else{
+			printf("key: %d\tvalue: %s, %s, %s\n", i, shellframes[i].lines[0], shellframes[i].lines[1], shellframes[i].lines[2]);
+			fflush(stdout);
+		}
+    }
+	printf("\n\t%d frames in total, %d frames in use, %d frames free\n\n", SHELL_FRAMES, SHELL_FRAMES-count_empty, count_empty);
+	fflush(stdout);
+}
+
+//checks frame store and returns the index of the first empty frame 
+int findEmptyFrame() {
+	int emptyFrame = -1;
+	for(int i=0; i<SHELL_FRAMES; i++){
+		if(shellframes[i].empty) {
+			emptyFrame = i;
+			break;
+		}
+	}
+	return emptyFrame;
+}
+
+void removeWhitespace(char* output, char* input){
+	int i=0;
+	while(input[i] == ' ' || input[i] == '\t' || input[i] == '\n'){
+		i++;
+	}
+	int x=0;
+	for(int j=i; input[j]!='\0'; j++){
+		output[x] = input[j];
+		x++;
+	}
+	output[x] = '\0'; 
+}
+
+//loads lines from file into frame store and returns the frame number
+int loadFrame(FILE* fp, int pid){
+	int emptyFrame = -1;
+	emptyFrame = findEmptyFrame();
+	if (emptyFrame == -1){
+		return emptyFrame;
+	}
+	char command[1000];
+	//printf("Inside loadFrame():\n");
+	for(int i=0; i<LINES_PER_FRAME; i++){
+		if(readNextCommand(fp, command)){
+			char trimmedCommand[1000];
+			removeWhitespace(trimmedCommand, command);
+			shellframes[emptyFrame].lines[i] = strdup(trimmedCommand);
+			//printf("%s\n",trimmedCommand);
+		}
+		else{
+			shellframes[emptyFrame].lines[i] = NULL;
+		}
+	}
+	for(int i=0; i<LINES_PER_FRAME; i++){
+		printf("%s\n",shellframes[emptyFrame].lines[0]);
+	}
+	shellframes[emptyFrame].pid = pid;
+	shellframes[emptyFrame].empty = false;
+	return emptyFrame;
+}
 
 /*
  * Function:  addFileToMem 
@@ -218,6 +291,10 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_VARS + SHELL_FRAMES) return NULL; 
 	return shellmemory[index].value;
+}
+
+char * mem_get_frame(int index){
+	
 }
 
 void mem_free_lines_between(int start, int end){

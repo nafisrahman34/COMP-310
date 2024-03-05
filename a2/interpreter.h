@@ -17,6 +17,7 @@ enum Error {
 	BAD_COMMAND,
 	ERROR_CD,
 	ERROR_MKDIR,
+	ERROR_LOADFRAME,
 };
 
 #endif

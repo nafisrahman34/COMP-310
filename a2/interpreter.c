@@ -25,7 +25,8 @@ char* error_msgs[] = {
 	"non-alphanumeric token",
 	"unknown name",
 	"cd",
-	"mkdir"
+	"mkdir",
+	"load frame error"
 };
 
 int handle_error(enum Error error_code){
@@ -268,6 +269,9 @@ int exec(char *fname1, char *fname2, char *fname3) {
 		}
     } 
 	error_code = schedule_by_policy("RR");
+	
+	printf("here");
+	fflush(stdout);
 	if(error_code != 0){
 		return handle_error(error_code);
 	}

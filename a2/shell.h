@@ -1,6 +1,8 @@
+#include <stdio.h>
 #ifndef SHELL_H
 #define SHELL_H
 int parseInput(char *ui);
+int readNextCommand(FILE *fp, char *command);
 #endif
 
 #ifndef FRAMESIZE

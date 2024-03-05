@@ -32,30 +32,38 @@ int process_initialize(char *filename, int id) {
 
     int num_commands = 0;
     char line[1000];
+    //counts number of commands in the file
     while (readNextCommand(fp, line)) {
         num_commands++;
     }
     fclose(fp);
 
+    //copies input to backing store directory
     error_code = copy_script_to_backing_store(filename, id);
     if (error_code != 0) {
         return error_code;
     }
 
     char new_filename[1000];
-    sprintf(new_filename, "%s/%s", "backing_store", filename);
+    sprintf(new_filename, "%s/%s.%d", "backing_store", filename, id);
+    //opens the file from the backing store directory
     fp = fopen(new_filename, "rt");
     if (fp == NULL) {
         return 11;
     }
 
     PCB *pcb = makePCB(fp, num_commands);
-    int frame;
+    //find an empty frame in frame store and load upto 2 frames of data into the frame store with data from the file
+    for(int i=0; i<2 && i*LINES_PER_FRAME<num_commands; i++){
+        int frame = loadFrame(fp, id);
+        if(frame == -1) return 12;
+        pcb->current_command = pcb->current_command + LINES_PER_FRAME;
+        setFrame(pcb, i, frame);
+    }
 
     QueueNode *node = malloc(sizeof(QueueNode));
     node->pcb = pcb;
     ready_queue_add_to_tail(node);
-
     return error_code;
 }
 

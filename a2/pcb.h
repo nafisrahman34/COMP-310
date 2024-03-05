@@ -27,6 +27,6 @@ typedef struct
 void freePCB(PCB *pcb);
 void setFrame(PCB *pcb, int frame_index, int frame);
 int generatePID();
-PCB * makePCB(FILE *fp, int num_commands);
+PCB* makePCB(FILE *fp, int num_commands);
 
 #endif
