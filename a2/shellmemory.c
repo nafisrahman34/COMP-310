@@ -84,41 +84,37 @@ void mem_init() {
 
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
-	int i;
-	for (i=0; i<SHELL_VARS; i++){
-		printf("here\n");
-		fflush(stdout);
-		if (strcmp(shellvars[i].var, var_in) && shellvars[i].var== 0){
-			printf("here inside\n");
+	int i=0;
+    for (i = 0; i < SHELL_VARS; i++) {
+        if (shellvars[i].var && strcmp(var_in, shellvars[i].var) == 0) {
+			printf("here\n");
 			fflush(stdout);
-			shellvars[i].value = strdup(value_in);
-			return;
-		} 
-	}
+            shellvars[i].value = strdup(value_in);
+            return;
+        }
+    }
 
-	//Value does not exist, need to find a free spot.
-	for (i=0; i<SHELL_VARS; i++){
-		if (shellvars[i].var == NULL){
-			shellvars[i].var = strdup(var_in);
-			shellvars[i].value = strdup(value_in);
-			return;
-		} 
-	}
+    // Value does not exist, need to find a free spot.
+    for (i = 0; i < SHELL_VARS; i++) {
+        if (shellvars[i].var == NULL) {
+            shellvars[i].var = strdup(var_in);
+            shellvars[i].value = strdup(value_in);
+            return;
+        }
+    }
 
-	return;
-
+    return;
 }
 
 //get value based on input key
 char *mem_get_value(char *var_in) {
-	int i;
+	int i=0;
 	for (i=0; i<SHELL_VARS; i++){
 		if (strcmp(shellvars[i].var, var_in) && shellvars[i].var == 0){
 			return strdup(shellvars[i].value);
 		} 
 	}
 	return NULL;
-
 }
 
 

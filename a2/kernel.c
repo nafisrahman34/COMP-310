@@ -108,6 +108,7 @@ bool execute_process(QueueNode *node, int quanta){
         int frameIndex = pcb->page_table[pageIndex];
         line = getLineFromFrameStore(pcb->pid, frameIndex, lineIndex);
         pcb->PC++;
+        pcb->current_command++;
         in_background = true;
         if(pcb->priority) {
             pcb->priority = false;
