@@ -110,7 +110,7 @@ void mem_set_value(char *var_in, char *value_in) {
 char *mem_get_value(char *var_in) {
 	int i=0;
 	for (i=0; i<SHELL_VARS; i++){
-		if (strcmp(shellvars[i].var, var_in) && shellvars[i].var == 0){
+		if (strcmp(shellvars[i].var, var_in) == 0){
 			return strdup(shellvars[i].value);
 		} 
 	}
