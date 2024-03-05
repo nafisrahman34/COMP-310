@@ -85,18 +85,20 @@ void mem_init() {
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
 	int i;
-	for (i=0; i<1000; i++){
-		if (strcmp(shellmemory[i].var, var_in) == 0){
-			shellmemory[i].value = strdup(value_in);
+	for (i=0; i<SHELL_VARS; i++){
+		char *varFromMem = shellvars[i].var;
+		if (strcmp(varFromMem, var_in) == 0){
+			shellvars[i].value = strdup(value_in);
 			return;
 		} 
 	}
 
 	//Value does not exist, need to find a free spot.
-	for (i=0; i<1000; i++){
-		if (strcmp(shellmemory[i].var, "none") == 0){
-			shellmemory[i].var = strdup(var_in);
-			shellmemory[i].value = strdup(value_in);
+	for (i=0; i<SHELL_VARS; i++){
+		char *varFromMem = shellvars[i].var;
+		if (strcmp(varFromMem, "none") == 0){
+			shellvars[i].var = strdup(var_in);
+			shellvars[i].value = strdup(value_in);
 			return;
 		} 
 	}
