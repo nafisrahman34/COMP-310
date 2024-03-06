@@ -92,7 +92,6 @@ bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     bool output = false;
-    char* pageFault = "Page fault";
     for(int i=0; i<quanta; i++){
         //check if process is finished; return true if finished
         if(pcb->PC == pcb->number_of_commands){
@@ -107,17 +106,22 @@ bool execute_process(QueueNode *node, int quanta){
         int frameIndex = pcb->page_table[pageIndex];
         //handling page faults 
         if(frameIndex==-1 || getLineFromFrameStore(pcb->pid, frameIndex, lineIndex) == NULL){
+            //reset filestream to start of file
             rewind(pcb->fp);
             int i=0;
             char throwaway[1000];
+            //flush out lines from the file by repeatedly calling readNextCommand until filestream pointer is back where it was before the lines were loaded into the framestore
             while(i!=pcb->current_command){
                 i++;
                 readNextCommand(pcb->fp, throwaway);
             }
+            //load required lines into framestore
             int frame = loadFrame(pcb->fp, pcb->pid);
             setFrame(pcb, pageIndex, frame);
+            //return false so the current node is added to the tail of Queue
             return output;
         }
+        //if no page fault, simply get line from frame store and execute instruction
         line = getLineFromFrameStore(pcb->pid, frameIndex, lineIndex);
         pcb->PC++;
         pcb->current_command++;

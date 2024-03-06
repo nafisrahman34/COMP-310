@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "interpreter.h"
+#include <limits.h>
 
 #define SHELL_FRAMES (FRAMESIZE / LINES_PER_FRAME)
 #define SHELL_VARS (VARMEMSIZE)
@@ -74,8 +75,10 @@ void mem_init() {
         shellvars[i].value = NULL;
     }
 
-    for (int i = 0; i < SHELL_FRAMES; ++i) {
-        memset(shellframes[i].lines, 0, LINES_PER_FRAME * sizeof(char*));
+    for (int i = 0; i < SHELL_FRAMES; i++) {
+        for(int j=0; j<LINES_PER_FRAME; j++){
+			shellframes[i].lines[j] = NULL;
+		}
         shellframes[i].pid = -1;
         shellframes[i].lru = -1;
         shellframes[i].empty = true;
@@ -187,19 +190,23 @@ int loadFrame(FILE* fp, int pid){
 	emptyFrame = findEmptyFrame();
 	//if framestore is full we need to pick a victim frame to evict
 	if (emptyFrame == -1){
-		//picking a victim frame randomly
-		int victimFrame = 0;
+		//picking a victim frame by finding the frame with lowest lru
+		int lowestLru = INT_MAX;
+		int victimFrame;
+		for(int i=0; i<SHELL_FRAMES; i++){
+			if(shellframes[i].lru<lowestLru){
+				victimFrame = i;
+				lowestLru = shellframes[i].lru;
+			}
+		}
 		emptyFrame = victimFrame;
 
 		//printing error messages and victim frame lines
 		printf("%s\n", pageFaultStart);
-		fflush(stdout);
 		for(int i=0; i<LINES_PER_FRAME; i++){
-			printf("%s\n", shellframes[emptyFrame].lines[i]);
-			fflush(stdout);
+			if(shellframes[emptyFrame].lines[i]!=NULL) printf("%s\n", shellframes[emptyFrame].lines[i]);
 		}
 		printf("%s\n", pageFaultEnd);
-		fflush(stdout);
 	}
 	//printf("Inside loadFrame():\n");
 	char command[1000];
@@ -216,6 +223,8 @@ int loadFrame(FILE* fp, int pid){
 	// 	printf("%s\n",shellframes[emptyFrame].lines[i]);
 	// }
 	shellframes[emptyFrame].pid = pid;
+	//lru incremented when frame is loaded
+	shellframes[emptyFrame].lru++;
 	shellframes[emptyFrame].empty = false;
 	return emptyFrame;
 }
@@ -303,6 +312,8 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 
 char* getLineFromFrameStore(int pid, int frameIndex, int lineIndex){
 	if(shellframes[frameIndex].pid != pid || frameIndex<0 || lineIndex<0 || frameIndex >= SHELL_FRAMES || lineIndex >= LINES_PER_FRAME) return NULL;
+	//lru incremented when data stored in frame is used
+	shellframes[frameIndex].lru++;
 	return shellframes[frameIndex].lines[lineIndex];
 }
 
