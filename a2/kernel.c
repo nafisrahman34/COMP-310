@@ -152,7 +152,7 @@ void *scheduler_FCFS(){
             else break;   
         }
         cur = ready_queue_pop_head();
-        execute_process(cur, MAX_INT);
+        if(!execute_process(cur, MAX_INT)) ready_queue_add_to_tail(cur);
     }
     return 0;
 }
