@@ -1,9 +1,7 @@
-echo P10L1
-set a PTenLineTwoSet
-print a
-echo P10L3
-echo $a
-echo P10L5
-set a PTenLineSixSet
-echo $a
-echo P10L7
+echo P7L1
+echo P7L2
+echo P7L3
+echo P7L4
+echo P7L5
+echo P7L6
+echo P7L7

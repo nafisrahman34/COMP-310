@@ -194,9 +194,9 @@ int loadFrame(FILE* fp, int pid){
 		int lowestLru = INT_MAX;
 		int victimFrame;
 		for(int i=0; i<SHELL_FRAMES; i++){
-			if(shellframes[i].lru<lowestLru){
+			if(shellframes[i].lru != -1 && shellframes[i].lru<lowestLru){
 				victimFrame = i;
-				lowestLru = shellframes[i].lru;
+				lowestLru = shellframes[victimFrame].lru;
 			}
 		}
 		emptyFrame = victimFrame;
@@ -208,23 +208,15 @@ int loadFrame(FILE* fp, int pid){
 		}
 		printf("%s\n", pageFaultEnd);
 	}
-	//printf("Inside loadFrame():\n");
 	char command[1000];
 	for(int i=0; i<LINES_PER_FRAME; i++){
-		if(readNextCommand(fp, command)){
+		if(readNextCommand(fp, command) && command!=NULL){
 			shellframes[emptyFrame].lines[i] = strdup(removeWhitespace(command));
-			//printf("%s\n",trimmedCommand);
-		}
-		else{
-			shellframes[emptyFrame].lines[i] = NULL;
 		}
 	}
-	// for(int i=0; i<LINES_PER_FRAME; i++){
-	// 	printf("%s\n",shellframes[emptyFrame].lines[i]);
-	// }
 	shellframes[emptyFrame].pid = pid;
 	//lru incremented when frame is loaded
-	shellframes[emptyFrame].lru++;
+	shellframes[emptyFrame].lru = num_lru++;
 	shellframes[emptyFrame].empty = false;
 	return emptyFrame;
 }
@@ -313,7 +305,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 char* getLineFromFrameStore(int pid, int frameIndex, int lineIndex){
 	if(shellframes[frameIndex].pid != pid || frameIndex<0 || lineIndex<0 || frameIndex >= SHELL_FRAMES || lineIndex >= LINES_PER_FRAME) return NULL;
 	//lru incremented when data stored in frame is used
-	shellframes[frameIndex].lru++;
+	shellframes[frameIndex].lru = num_lru++;
 	return shellframes[frameIndex].lines[lineIndex];
 }
 

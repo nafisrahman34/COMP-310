@@ -92,14 +92,16 @@ bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     bool output = false;
+    //check if process is finished; return true if finished
+    if(pcb->PC == pcb->number_of_commands){
+        terminate_process(node);
+        in_background = false;
+        output = true;
+        return output;
+    }
+    
     for(int i=0; i<quanta; i++){
-        //check if process is finished; return true if finished
-        if(pcb->PC == pcb->number_of_commands){
-            terminate_process(node);
-            in_background = false;
-            output = true;
-            break;
-        }
+        
         //find frame index and line index for current PC
         int pageIndex = pcb->PC/LINES_PER_FRAME;
         int lineIndex = pcb->PC%LINES_PER_FRAME;
@@ -131,6 +133,13 @@ bool execute_process(QueueNode *node, int quanta){
         }
         parseInput(line);
         in_background = false;
+
+        if(pcb->PC == pcb->number_of_commands){
+            terminate_process(node);
+            in_background = false;
+            output = true;
+            return output;
+        }
     }
     return output;
 }
