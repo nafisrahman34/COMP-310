@@ -1,4 +1,5 @@
 #include "shell.h"
+#include <time.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -180,10 +181,25 @@ char* removeWhitespace(char* input){
 
 //loads lines from file into frame store and returns the frame number
 int loadFrame(FILE* fp, int pid){
+	char* pageFaultStart = "Page fault! Victim page contents:";
+	char* pageFaultEnd = "End of the victim page contents.";
 	int emptyFrame = -1;
 	emptyFrame = findEmptyFrame();
+	//if framestore is full we need to pick a victim frame to evict
 	if (emptyFrame == -1){
-		return emptyFrame;
+		//picking a victim frame randomly
+		int victimFrame = 0;
+		emptyFrame = victimFrame;
+
+		//printing error messages and victim frame lines
+		printf("%s\n", pageFaultStart);
+		fflush(stdout);
+		for(int i=0; i<LINES_PER_FRAME; i++){
+			printf("%s\n", shellframes[emptyFrame].lines[i]);
+			fflush(stdout);
+		}
+		printf("%s\n", pageFaultEnd);
+		fflush(stdout);
 	}
 	//printf("Inside loadFrame():\n");
 	char command[1000];
@@ -286,10 +302,8 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 }
 
 char* getLineFromFrameStore(int pid, int frameIndex, int lineIndex){
-	if(shellframes[frameIndex].pid==pid){
-		return shellframes[frameIndex].lines[lineIndex];
-	}
-	return NULL;
+	if(shellframes[frameIndex].pid != pid || frameIndex<0 || lineIndex<0 || frameIndex >= SHELL_FRAMES || lineIndex >= LINES_PER_FRAME) return NULL;
+	return shellframes[frameIndex].lines[lineIndex];
 }
 
 

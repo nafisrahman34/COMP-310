@@ -57,7 +57,7 @@ int process_initialize(char *filename, int id) {
     for(int i=0; i<2 && i*LINES_PER_FRAME<num_commands; i++){
         int frame = loadFrame(fp, id);
         if(frame == -1) return 12;
-        pcb->current_command = pcb->current_command + LINES_PER_FRAME;
+        pcb->current_command = 0;
         setFrame(pcb, i, frame);
     }
 
@@ -67,32 +67,32 @@ int process_initialize(char *filename, int id) {
     return error_code;
 }
 
-int shell_process_initialize(){
-    //Note that "You can assume that the # option will only be used in batch mode."
-    //So we know that the input is a file, we can directly load the file into ram
-    int* start = (int*)malloc(sizeof(int));
-    int* end = (int*)malloc(sizeof(int));
-    int error_code = 0;
-    error_code = load_file(stdin, start, end, "_SHELL");
-    if(error_code != 0){
-        return error_code;
-    }
-    PCB* newPCB = makePCB(*start,*end);
-    newPCB->priority = true;
-    QueueNode *node = malloc(sizeof(QueueNode));
-    node->pcb = newPCB;
+// int shell_process_initialize(){
+//     //Note that "You can assume that the # option will only be used in batch mode."
+//     //So we know that the input is a file, we can directly load the file into ram
+//     int* start = (int*)malloc(sizeof(int));
+//     int* end = (int*)malloc(sizeof(int));
+//     int error_code = 0;
+//     error_code = load_file(stdin, start, end, "_SHELL");
+//     if(error_code != 0){
+//         return error_code;
+//     }
+//     PCB* newPCB = makePCB(*start,*end);
+//     newPCB->priority = true;
+//     QueueNode *node = malloc(sizeof(QueueNode));
+//     node->pcb = newPCB;
 
-    ready_queue_add_to_head(node);
+//     ready_queue_add_to_head(node);
 
-    freopen("/dev/tty", "r", stdin);
-    return 0;
-}
+//     freopen("/dev/tty", "r", stdin);
+//     return 0;
+// }
 
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     bool output = false;
-    
+    char* pageFault = "Page fault";
     for(int i=0; i<quanta; i++){
         //check if process is finished; return true if finished
         if(pcb->PC == pcb->number_of_commands){
@@ -101,11 +101,23 @@ bool execute_process(QueueNode *node, int quanta){
             output = true;
             break;
         }
-        
         //find frame index and line index for current PC
         int pageIndex = pcb->PC/LINES_PER_FRAME;
         int lineIndex = pcb->PC%LINES_PER_FRAME;
         int frameIndex = pcb->page_table[pageIndex];
+        //handling page faults 
+        if(frameIndex==-1 || getLineFromFrameStore(pcb->pid, frameIndex, lineIndex) == NULL){
+            rewind(pcb->fp);
+            int i=0;
+            char throwaway[1000];
+            while(i!=pcb->current_command){
+                i++;
+                readNextCommand(pcb->fp, throwaway);
+            }
+            int frame = loadFrame(pcb->fp, pcb->pid);
+            setFrame(pcb, pageIndex, frame);
+            return output;
+        }
         line = getLineFromFrameStore(pcb->pid, frameIndex, lineIndex);
         pcb->PC++;
         pcb->current_command++;
