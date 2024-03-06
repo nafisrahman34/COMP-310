@@ -185,7 +185,7 @@ char* removeWhitespace(char* input){
 //loads lines from file into frame store and returns the frame number
 int loadFrame(FILE* fp, int pid){
 	char* pageFaultStart = "Page fault! Victim page contents:";
-	char* pageFaultEnd = "End of the victim page contents.";
+	char* pageFaultEnd = "End of victim page contents.";
 	int emptyFrame = -1;
 	emptyFrame = findEmptyFrame();
 	//if framestore is full we need to pick a victim frame to evict
