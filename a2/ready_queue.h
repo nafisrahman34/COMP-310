@@ -1,3 +1,5 @@
+// Names: Nafis Rahman, Brandon Fook Chong
+// IDs: 260889422, 260989601
 #ifndef READY_QUEUE_H
 #define READY_QUEUE_H
 #include "pcb.h"

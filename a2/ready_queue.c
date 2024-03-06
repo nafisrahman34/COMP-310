@@ -1,3 +1,5 @@
+// Names: Nafis Rahman, Brandon Fook Chong
+// IDs: 260889422, 260989601
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
