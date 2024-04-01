@@ -25,7 +25,7 @@ int copy_in(char *fname) {
   long size = ftell(fp);
   rewind(fp);
   //allocate space for buffer and read contents of file into buffer
-  char *buffer = malloc((size + 1)*sizeof(char));
+  char *buffer = malloc(size + 1);
   memset(buffer, 0, size+1);
   fread(buffer, size, 1, fp);
   fclose(fp);
