@@ -22,11 +22,11 @@ int copy_in(char *fname) {
     return -1;
   }
   //obtain size of file on real hard drive
-  long size = ftell(fp);
+  long size = ftell(fp)+1;
   rewind(fp);
   //allocate space for buffer and read contents of file into buffer
-  char *buffer = malloc(size + 1);
-  memset(buffer, 0, size+1);
+  char *buffer = malloc(size);
+  memset(buffer, 0, size);
   fread(buffer, 1, size, fp);
   fclose(fp);
   //check if space is available on shell disk for the file and create the file
