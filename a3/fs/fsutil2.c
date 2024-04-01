@@ -27,7 +27,7 @@ int copy_in(char *fname) {
   //allocate space for buffer and read contents of file into buffer
   char *buffer = malloc(size + 1);
   memset(buffer, 0, size+1);
-  fread(buffer, size, 1, fp);
+  fread(buffer, 1, size, fp);
   fclose(fp);
   //check if space is available on shell disk for the file and create the file
   long freespace = fsutil_freespace() * BLOCK_SECTOR_SIZE;

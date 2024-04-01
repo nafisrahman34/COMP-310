@@ -286,6 +286,7 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
 
     int status = copy_in(command_args[1]);
     if (status != 0)
+      if(status == -1) handle_error(FILE_DOES_NOT_EXIST);
       return handle_error(status);
     return 0;
   } else if (strcmp(command_args[0], "copy_out") == 0) {
