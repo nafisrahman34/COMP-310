@@ -46,9 +46,11 @@ int copy_in(char *fname) {
 }
 
 int copy_out(char *fname) {
+  //find the size of the file and allocate space for it in the buffer
   int size = fsutil_size(fname);
   char* buffer = malloc((size+1)*sizeof(char));
   memset(buffer, 0, size+1);
+  //open file
   struct file *file_s = get_file_by_fname(fname);
   if (file_s == NULL) {
     file_s = filesys_open(fname);
@@ -57,23 +59,55 @@ int copy_out(char *fname) {
     }
     add_to_file_table(file_s, fname);
   }
+  //store the curr offset of the file and reset offset to 0 to read from the beginning
   offset_t cur_offset = file_tell(file_s);
   file_seek(file_s, 0);
+  //copy the contents of the file into the buffer
   fsutil_read(fname, buffer, size);
+  //restore file offset to what it was initially
   file_seek(file_s, cur_offset);
+  //create the file on the real hard drive and populate it with contents of buffer
   FILE* file = fopen(fname, "w");
   if(file == NULL){
+    //raises FILE_WRITE_ERROR if file is not created or opened
     return 11;
   }
   fputs(buffer, file);
+  //free the memory allocated for the buffer and close the file
   fclose(file);
   free(buffer);
   return 0;
 }
 
 void find_file(char *pattern) {
-  // TODO
-  return;
+  //open root directory and create a variable to store file names
+  struct dir *dir = dir_open_root();
+  char name[NAME_MAX + 1];
+  while (dir_readdir(dir, name)==true)
+  {
+    //open curr file in the directory
+    struct file *file_s = filesys_open(name);
+    add_to_file_table(file_s, name);
+    //obtain size of file and allocate space for it in the buffer
+    long size = fsutil_size(name);
+    char *buffer = malloc(size+1);
+    //store the current offset of the file and reset offset to 0 to read from the beginning
+    offset_t cur_offset = file_tell(file_s);
+    file_seek(file_s, 0);
+    //read contents of file and store in the buffer 
+    file_read(file_s, buffer, size);
+    //restore file pointer offset
+    file_seek(file_s, cur_offset);
+    buffer[size] = '\0';
+    //check if the pattern exists within the content of the file
+    if(strstr(buffer, pattern) != NULL){
+      printf("%s\n", name);
+    }
+    //free the buffer, close the file and close the directory
+    free(buffer);
+    remove_from_file_table(name);
+  }
+  dir_close(dir);
 }
 
 void fragmentation_degree() {
