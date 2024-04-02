@@ -111,7 +111,44 @@ void find_file(char *pattern) {
 }
 
 void fragmentation_degree() {
-  // TODO
+    struct dir *dir = dir_open_root();
+    char name[NAME_MAX + 1];
+    int fragmentable_files = 0;
+    int fragmented_files = 0;
+
+    while (dir_readdir(dir, name) == true) {
+        struct file *file_s = filesys_open(name);
+        if (file_s == NULL) {
+            continue;
+        }
+
+        int total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
+        if (total_blocks > 1) {
+            fragmentable_files++;
+            struct inode *inode = file_get_inode(file_s);
+            int last_sector = byte_to_sector(inode, 0);
+
+            for (int j = 1; j < total_blocks; j++) {
+                int current_sector = byte_to_sector(inode, j * BLOCK_SECTOR_SIZE);
+                if (current_sector - last_sector > 3) {
+                    fragmented_files++;
+                    break;
+                }
+                last_sector = current_sector;
+            }
+        }
+
+        filesys_close(file_s);
+    }
+
+    dir_close(dir);
+
+    if (fragmentable_files == 0) {
+        printf("No fragmentable files found.\n");
+    } else {
+        double fragmentation = (double)fragmented_files / fragmentable_files;
+        printf("Fragmentation degree: %.2f\n", fragmentation);
+    }
 }
 
 int defragment() {
