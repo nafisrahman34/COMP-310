@@ -9,6 +9,7 @@
 #include "fsutil.h"
 #include "inode.h"
 #include "off_t.h"
+#include "filesys.h"
 #include "partition.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,10 +127,10 @@ void fragmentation_degree() {
         if (total_blocks > 1) {
             fragmentable_files++;
             struct inode *inode = file_get_inode(file_s);
-            int last_sector = byte_to_sector(inode, 0);
+            int last_sector = bytes_to_sectors(0);
 
             for (int j = 1; j < total_blocks; j++) {
-                int current_sector = byte_to_sector(inode, j * BLOCK_SECTOR_SIZE);
+                int current_sector = bytes_to_sectors(j * BLOCK_SECTOR_SIZE);
                 if (current_sector - last_sector > 3) {
                     fragmented_files++;
                     break;
@@ -138,7 +139,7 @@ void fragmentation_degree() {
             }
         }
 
-        filesys_close(file_s);
+        fclose(file_s);
     }
 
     dir_close(dir);
