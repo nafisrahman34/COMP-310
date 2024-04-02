@@ -139,7 +139,7 @@ void fragmentation_degree() {
             }
         }
 
-        fclose(file_s);
+        file_close(file_s);
     }
 
     dir_close(dir);
