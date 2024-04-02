@@ -144,11 +144,14 @@ void fragmentation_degree() {
 
     dir_close(dir);
 
+    printf("Num free sectors: %d\n", free_map_count_free());
+    printf("Num fragmentable files: %d\n", fragmentable_files);
     if (fragmentable_files == 0) {
         printf("No fragmentable files found.\n");
     } else {
         double fragmentation = (double)fragmented_files / fragmentable_files;
-        printf("Fragmentation degree: %.2f\n", fragmentation);
+        printf("Num fragmented files: %d\n", fragmented_files);
+        printf("Fragmentation pct: %.6f\n", fragmentation * 100);
     }
 }
 
