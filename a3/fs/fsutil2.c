@@ -131,7 +131,7 @@ void fragmentation_degree() {
 
             for (int j = 1; j < total_blocks; j++) {
                 int current_sector = bytes_to_sectors(j * BLOCK_SECTOR_SIZE);
-                if (current_sector - last_sector > 3) {
+                if (current_sector - last_sector != 1) {
                     fragmented_files++;
                     break;
                 }
