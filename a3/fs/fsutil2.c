@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#define MAX_FILES 1000 
 int copy_in(char *fname) {
   FILE *fp = fopen(fname, "r");
   if(fp == NULL) return -1;
@@ -155,6 +155,12 @@ void fragmentation_degree() {
     }
 }
 
+typedef struct {
+    char name[NAME_MAX + 1];
+    void *data;
+    int size;
+} FileData;
+
 int defragment() {
     struct dir *dir = dir_open_root();
     char name[NAME_MAX + 1];
@@ -166,6 +172,8 @@ int defragment() {
     int i;
 
     // Step 1: Read all files into memory
+    FileData *files = malloc(sizeof(FileData) * MAX_FILES);
+    int file_count = 0;
     while (dir_readdir(dir, name) == true) {
         file_s = filesys_open(name);
         if (file_s == NULL) {
@@ -181,10 +189,15 @@ int defragment() {
             block_read(fs_device, sectors[i], buffer + i * BLOCK_SECTOR_SIZE);
         }
 
+        strcpy(files[file_count].name, name);
+        files[file_count].data = buffer;
+        files[file_count].size = total_blocks * BLOCK_SECTOR_SIZE;
+        file_count++;
+
         file_close(file_s);
     }
 
-        // Step 2: Clear the disk
+    // Step 2: Clear the disk
     while (dir_readdir(dir, name) == true) {
         if (!filesys_remove(name)) {
             printf("Failed to remove file: %s\n", name);
@@ -193,25 +206,23 @@ int defragment() {
     }
 
     // Step 3: Write the files back to the disk
-    while (dir_readdir(dir, name) == true) {
-        file_s = filesys_open(name);
-        if (file_s == NULL) {
-            continue;
+    for (i = 0; i < file_count; i++) {
+        if (filesys_create(files[i].name, files[i].size, false)) {
+            file_s = filesys_open(files[i].name);
+            if (file_s == NULL) {
+                printf("Failed to open file: %s\n", files[i].name);
+                return -1;
+            }
+        } else {
+            printf("Failed to create file: %s\n", files[i].name);
+            return -1;
         }
 
-        inode = file_get_inode(file_s);
-        total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
-        sectors = get_inode_data_sectors(inode);
-
-        for (i = 0; i < total_blocks; i++) {
-            block_write(fs_device, sectors[i], buffer + i * BLOCK_SECTOR_SIZE);
-        }
-
+        file_write(file_s, files[i].data, files[i].size);
         file_close(file_s);
     }
 
     dir_close(dir);
-    return 0;
 }
 
 void recover(int flag) {
