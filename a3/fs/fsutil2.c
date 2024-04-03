@@ -336,6 +336,13 @@ void recover(int flag) {
             int end_index = start_index;
             for (int j = start_index; j < BLOCK_SECTOR_SIZE; j++) {
                 if (((char*)buffer)[j] != '\0') {
+                    start_index = j;
+                    end_index = j + 1;
+                    break;
+                }
+            }
+            for (int j = start_index + 1; j < BLOCK_SECTOR_SIZE; j++) {
+                if (((char*)buffer)[j] != '\0') {
                     end_index = j + 1;
                 }
             }
