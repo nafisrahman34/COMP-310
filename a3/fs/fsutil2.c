@@ -115,63 +115,57 @@ void find_file(char *pattern) {
 }
 
 
-// Function to calculate the degree of fragmentation in the file system
+//function to determine the fragmentation degree
 void fragmentation_degree() {
-    // Open the root directory
     struct dir *rootDir = dir_open_root();
     char fileName[NAME_MAX + 1];
-    int countFragmentable = 0;  // Number of files that can be fragmented
-    int countFragmented = 0;   // Number of files that are fragmented
+    //variables to keep track of files that can be fragmented and that have been fragmented
+    int countFragmentable = 0; 
+    int countFragmented = 0;   
 
-    // Loop through all files in the root directory
+    //get all the files in root
     do {
-        // Open the file
+        //use given function to open file
         struct file *currentFile = filesys_open(fileName);
         if (currentFile == NULL) {
             continue;
         }
 
-        // Calculate the total number of blocks in the file
+        //get total number of blocks using given function file_length
         int totalBlocks = file_length(currentFile) / BLOCK_SECTOR_SIZE;
-        // If the file has more than one block, it can be fragmented
+        //when file has at least 1 block we can fragment
         if (totalBlocks > 1) {
+            //increment count since fragmentable
             countFragmentable++;
-
-            // Get the inode of the file
+            //get inode and sector
             struct inode *fileInode = file_get_inode(currentFile);
-            // Get the sectors of the inode
             block_sector_t *sectors = get_inode_data_sectors(fileInode);
-
-            // Check if the file is fragmented
+            //verify if file is fragmented
             int previousSector = sectors[0];
             for (int i = 1; i < totalBlocks; i++) {
                 int currentSector = sectors[i];
-                // If the difference between the current sector and the previous sector is more than 3, the file is fragmented
+                //bigger difference than 3 means file is fragmented as seen in instructions
                 if (currentSector - previousSector > 3) {
                     countFragmented++;
                     break;
                 }
                 previousSector = currentSector;
             }
-            // Free the sectors array
             free(sectors); 
         }
 
-        // Close the file
         file_close(currentFile);
     } while (dir_readdir(rootDir, fileName));
 
-    // Close the directory
     dir_close(rootDir);
 
-    // Print the number of fragmentable files
+    //print all statements necessary
     printf("Num fragmentable files: %d\n", countFragmentable);
     if (countFragmentable == 0) {
-        printf("No fragmentable files found.\n");
+        printf("No fragmentable files were found.\n");
     } else {
-        // Calculate the percentage of fragmented files
+        //percentage of fragmented files 
         double fragmentationPct = (double)countFragmented / countFragmentable;
-        // Print the number of fragmented files and the fragmentation percentage
         printf("Num fragmented files: %d\n", countFragmented);
         printf("Fragmentation pct: %.6f\n", fragmentationPct);
     }
@@ -180,72 +174,69 @@ void fragmentation_degree() {
 
 // Define a structure to hold file data
 typedef struct {
-    char name[NAME_MAX + 1];  // Name of the file
-    void *data;               // Pointer to the file data
-    off_t size;               // Size of the file
+    char fileName[NAME_MAX + 1];  // Name of the file
+    void *fileData;               // Pointer to the file data
+    off_t fileSize;               // Size of the file
 } FileData;
 
 // Function to defragment the file system
 int defragment() {
     // Open the root directory
-    struct dir *dir = dir_open_root();
-    FileData *files = NULL;
-    size_t file_count = 0;
+    struct dir *rootDir = dir_open_root();
+    FileData *fileArray = NULL;
+    size_t fileCount = 0;
     char name[NAME_MAX + 1];
 
-    while (dir_readdir(dir, name)) {
-        struct inode *inode = NULL;
-        if (!dir_lookup(dir, name, &inode)) {
-            continue;
-        }
-        if (inode_is_directory(inode)) {
-            inode_close(inode);
-            continue; 
-        }
+    // Read all files into memory
+    while (dir_readdir(rootDir, name)) {
+        struct inode *fileInode = NULL;
+        if (dir_lookup(rootDir, name, &fileInode)) {
+            if (!inode_is_directory(fileInode)) {
+                printf("Currently backing up given file %s\n", name);
+                off_t fileSize = inode_length(fileInode);
+                char *buffer = malloc(fileSize);
+                if (buffer) {
+                    inode_read_at(fileInode, buffer, fileSize, 0);
+                    fileArray = realloc(fileArray, sizeof(FileData) * (fileCount + 1));
+                    fileArray[fileCount].fileData = buffer;
+                    fileArray[fileCount].fileSize = fileSize;
+                    strncpy(fileArray[fileCount].fileName, name, NAME_MAX);
+                    fileCount++;
 
-        printf("Backing up file: %s\n", name);
-        off_t file_size = inode_length(inode);
-        char *buffer = malloc(file_size);
-        if (!buffer) {
-            printf("Failed to allocate memory for backup: %s\n", name);
-            inode_close(inode);
-            continue;
-        }
-
-        inode_read_at(inode, buffer, file_size, 0);
-        files = realloc(files, sizeof(FileData) * (file_count + 1));
-        files[file_count].data = buffer;
-        files[file_count].size = file_size;
-        strncpy(files[file_count].name, name, NAME_MAX);
-        file_count++;
-
-        inode_close(inode); 
-        printf("Removing file: %s\n", name);
-        fsutil_rm(name);
-    }
-
-    dir_close(dir);
-
-    for (size_t i = 0; i < file_count; i++) {
-        fsutil_rm(files[i].name);
-    }
-
-    for (size_t i = 0; i < file_count; i++) {
-        printf("Restoring file: %s\n", files[i].name);
-        if (fsutil_create(files[i].name, files[i].size)) {
-            if (fsutil_write(files[i].name, files[i].data, files[i].size) != -1) {
-                printf("File %s restored successfully.\n", files[i].name);
+                    printf("Currently removing given file: %s\n", name);
+                    fsutil_rm(name);
+                } else {
+                    printf("Cannot allocate enough memomry for backup: %s\n", name);
+                }
+                inode_close(fileInode);
             } else {
-                printf("Failed to write data %s.\n", files[i].name);
+                inode_close(fileInode);
+            }
+        }
+    }
+
+    dir_close(rootDir);
+
+    for (size_t i = 0; i < fileCount; i++) {
+        fsutil_rm(fileArray[i].fileName);
+    }
+
+    for (size_t i = 0; i < fileCount; i++) {
+        printf("Restoring file: %s\n", fileArray[i].fileName);
+        if (fsutil_create(fileArray[i].fileName, fileArray[i].fileSize)) {
+            if (fsutil_write(fileArray[i].fileName, fileArray[i].fileData, fileArray[i].fileSize) == -1) {
+                printf("Failed to write data %s.\n", fileArray[i].fileName);
+            } else {
+                printf("File restoration successful for file %s .\n", fileArray[i].fileName);
             }
         } else {
-            printf("Failed file creation %s.\n", files[i].name);
+            printf("Failed file creation %s.\n", fileArray[i].fileName);
         }
 
-        free(files[i].data);
+        free(fileArray[i].fileData);
     }
 
-    free(files); 
+    free(fileArray); 
 
     return 0;
 }
