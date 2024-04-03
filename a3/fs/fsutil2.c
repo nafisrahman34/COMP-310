@@ -186,6 +186,7 @@ typedef struct {
 } FileData;
 
 // Function to defragment the file system
+// Function to defragment the file system
 int defragment() {
     // Open the root directory
     struct dir *dir = dir_open_root();
@@ -206,18 +207,15 @@ int defragment() {
     // Reset the directory entry to start reading from the beginning
     dir_reopen(dir);
 
-    // Read all files into memory
+    // Step 1: Read all files into memory
     file_count = 0;
     while (dir_readdir(dir, name) == true) {
-        // Open the file
         file_s = filesys_open(name);
         if (file_s == NULL) {
             continue;
         }
 
-        // Get the size of the file
         off_t file_size = file_length(file_s);
-        // Allocate memory to hold the file data
         buffer = malloc(file_size);
         if (buffer == NULL) {
             printf("Failed to allocate memory for file: %s\n", name);
@@ -225,45 +223,25 @@ int defragment() {
             continue;
         }
 
-        // Read the file data into the buffer
         file_read(file_s, buffer, file_size);
 
-        // Store the file data in the files array
         strcpy(files[file_count].name, name);
         files[file_count].data = buffer;
         files[file_count].size = file_size;
         file_count++;
 
-        // Close the file
         file_close(file_s);
     }
 
-    // Clear the disk by removing all files
+    // Step 2: Remove all files
     dir_reopen(dir);
     while (dir_readdir(dir, name) == true) {
-        if (!filesys_remove(name)) {
-            printf("Failed to remove file: %s\n", name);
-            return -1;
-        }
+        fsutil_rm(name);
     }
 
-    // Write the files back to the disk in order of size (largest first)
+    // Step 3: Create all files again and write the data from the buffer to each
     for (i = 0; i < file_count; i++) {
-        // Find the index of the largest file
-        int max_index = i;
-        for (int j = i + 1; j < file_count; j++) {
-            if (files[j].size > files[max_index].size) {
-                max_index = j;
-            }
-        }
-
-        // Swap the current file with the largest file
-        FileData temp = files[i];
-        files[i] = files[max_index];
-        files[max_index] = temp;
-
-        // Create and write the current file
-        if (filesys_create(files[i].name, files[i].size, false)) {
+        if (fsutil_create(files[i].name, files[i].size)) {
             file_s = filesys_open(files[i].name);
             if (file_s == NULL) {
                 printf("Failed to open file: %s\n", files[i].name);
@@ -274,8 +252,7 @@ int defragment() {
             return -1;
         }
 
-        // Write the file data to the file
-        file_write(file_s, files[i].data, files[i].size);
+        fsutil_write(files[i].name, files[i].data, files[i].size);
         file_close(file_s);
     }
 
