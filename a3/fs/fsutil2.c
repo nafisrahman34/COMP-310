@@ -165,7 +165,6 @@ int defragment() {
     struct dir *dir = dir_open_root();
     char name[NAME_MAX + 1];
     struct file *file_s;
-    int total_blocks;
     void *buffer;
     int i;
 
@@ -189,17 +188,19 @@ int defragment() {
             continue;
         }
 
-        total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
-        if (file_length(file_s) % BLOCK_SECTOR_SIZE != 0) {
-            total_blocks++;
+        int file_size = file_length(file_s);
+        buffer = malloc(file_size);
+        if (buffer == NULL) {
+            printf("Failed to allocate memory for file: %s\n", name);
+            file_close(file_s);
+            continue;
         }
 
-        buffer = malloc(total_blocks * BLOCK_SECTOR_SIZE);
-        file_read(file_s, buffer, total_blocks * BLOCK_SECTOR_SIZE);
+        file_read(file_s, buffer, file_size);
 
         strcpy(files[file_count].name, name);
         files[file_count].data = buffer;
-        files[file_count].size = total_blocks * BLOCK_SECTOR_SIZE;
+        files[file_count].size = file_size;
         file_count++;
 
         file_close(file_s);
