@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+
 int copy_in(char *fname) {
   FILE *fp = fopen(fname, "r");
   if(fp == NULL) return -1;
@@ -45,6 +46,7 @@ int copy_in(char *fname) {
   }
   return 0;
 }
+
 
 int copy_out(char *fname) {
   //find the size of the file and allocate space for it in the buffer
@@ -80,6 +82,7 @@ int copy_out(char *fname) {
   return 0;
 }
 
+
 void find_file(char *pattern) {
   //open root directory and create a variable to store file names
   struct dir *dir = dir_open_root();
@@ -111,84 +114,110 @@ void find_file(char *pattern) {
   dir_close(dir);
 }
 
+
+// Function to calculate the degree of fragmentation in the file system
 void fragmentation_degree() {
+    // Open the root directory
     struct dir *dir = dir_open_root();
     char name[NAME_MAX + 1];
-    int fragmentable_files = 0;
-    int fragmented_files = 0;
+    int fragmentable_files = 0;  // Number of files that can be fragmented
+    int fragmented_files = 0;   // Number of files that are fragmented
 
+    // Loop through all files in the root directory
     while (dir_readdir(dir, name) == true) {
+        // Open the file
         struct file *file_s = filesys_open(name);
         if (file_s == NULL) {
             continue;
         }
 
+        // Calculate the total number of blocks in the file
         int total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
+        // If the file has more than one block, it can be fragmented
         if (total_blocks > 1) {
             fragmentable_files++;
+
+            // Get the inode of the file
             struct inode *inode = file_get_inode(file_s);
+            // Get the sectors of the inode
             block_sector_t *sectors = get_inode_data_sectors(inode);
 
+            // Check if the file is fragmented
             int last_sector = sectors[0];
             for (int j = 1; j < total_blocks; j++) {
-              int current_sector = sectors[j];
-              if (current_sector - last_sector > 3) {
-                  fragmented_files++;
-                  break;
-              }
-              last_sector = current_sector;
+                int current_sector = sectors[j];
+                // If the difference between the current sector and the last sector is more than 3, the file is fragmented
+                if (current_sector - last_sector > 3) {
+                    fragmented_files++;
+                    break;
+                }
+                last_sector = current_sector;
             }
+            // Free the sectors array
             free(sectors); 
         }
 
+        // Close the file
         file_close(file_s);
     }
 
+    // Close the directory
     dir_close(dir);
+
+    // Print the number of fragmentable files
     printf("Num fragmentable files: %d\n", fragmentable_files);
     if (fragmentable_files == 0) {
         printf("No fragmentable files found.\n");
     } else {
+        // Calculate the percentage of fragmented files
         double fragmentation = (double)fragmented_files / fragmentable_files;
+        // Print the number of fragmented files and the fragmentation percentage
         printf("Num fragmented files: %d\n", fragmented_files);
         printf("Fragmentation pct: %.6f\n", fragmentation);
     }
 }
 
+
+// Define a structure to hold file data
 typedef struct {
-    char name[NAME_MAX + 1];
-    void *data;
-    off_t size;
+    char name[NAME_MAX + 1];  // Name of the file
+    void *data;               // Pointer to the file data
+    off_t size;               // Size of the file
 } FileData;
 
+// Function to defragment the file system
 int defragment() {
+    // Open the root directory
     struct dir *dir = dir_open_root();
     char name[NAME_MAX + 1];
     struct file *file_s;
     void *buffer;
     int i;
 
-    // Step 1: Count the number of files
+    // Count the number of files in the root directory
     int file_count = 0;
     while (dir_readdir(dir, name) == true) {
         file_count++;
     }
 
-    // Allocate memory for the files array
+    // Allocate memory to hold data for all files
     FileData *files = malloc(sizeof(FileData) * file_count);
 
-    // Reset the directory entry
+    // Reset the directory entry to start reading from the beginning
     dir_reopen(dir);
 
     // Read all files into memory
     file_count = 0;
     while (dir_readdir(dir, name) == true) {
+        // Open the file
         file_s = filesys_open(name);
         if (file_s == NULL) {
             continue;
         }
 
+        // Get the size of the file
         off_t file_size = file_length(file_s);
+        // Allocate memory to hold the file data
         buffer = malloc(file_size);
         if (buffer == NULL) {
             printf("Failed to allocate memory for file: %s\n", name);
@@ -196,17 +225,20 @@ int defragment() {
             continue;
         }
 
+        // Read the file data into the buffer
         file_read(file_s, buffer, file_size);
 
+        // Store the file data in the files array
         strcpy(files[file_count].name, name);
         files[file_count].data = buffer;
         files[file_count].size = file_size;
         file_count++;
 
+        // Close the file
         file_close(file_s);
     }
 
-    // Clear the disk
+    // Clear the disk by removing all files
     dir_reopen(dir);
     while (dir_readdir(dir, name) == true) {
         if (!filesys_remove(name)) {
@@ -215,7 +247,7 @@ int defragment() {
         }
     }
 
-    // Write the files back to the disk
+    // Write the files back to the disk in order of size (largest first)
     for (i = 0; i < file_count; i++) {
         // Find the index of the largest file
         int max_index = i;
@@ -242,16 +274,18 @@ int defragment() {
             return -1;
         }
 
+        // Write the file data to the file
         file_write(file_s, files[i].data, files[i].size);
         file_close(file_s);
     }
 
-    // Free the memory
+    // Free the memory used to hold the file data
     for (i = 0; i < file_count; i++) {
         free(files[i].data);
     }
     free(files);
 
+    // Close the directory
     dir_close(dir);
 
     return 0;
