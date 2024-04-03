@@ -116,64 +116,64 @@ void find_file(char *pattern) {
 
 
 // Function to calculate the degree of fragmentation in the file system
-void fragmentation_degree() {
+void calculate_fragmentation() {
     // Open the root directory
-    struct dir *dir = dir_open_root();
-    char name[NAME_MAX + 1];
-    int fragmentable_files = 0;  // Number of files that can be fragmented
-    int fragmented_files = 0;   // Number of files that are fragmented
+    struct dir *rootDir = dir_open_root();
+    char fileName[NAME_MAX + 1];
+    int countFragmentable = 0;  // Number of files that can be fragmented
+    int countFragmented = 0;   // Number of files that are fragmented
 
     // Loop through all files in the root directory
-    while (dir_readdir(dir, name) == true) {
+    do {
         // Open the file
-        struct file *file_s = filesys_open(name);
-        if (file_s == NULL) {
+        struct file *currentFile = filesys_open(fileName);
+        if (currentFile == NULL) {
             continue;
         }
 
         // Calculate the total number of blocks in the file
-        int total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
+        int totalBlocks = file_length(currentFile) / BLOCK_SECTOR_SIZE;
         // If the file has more than one block, it can be fragmented
-        if (total_blocks > 1) {
-            fragmentable_files++;
+        if (totalBlocks > 1) {
+            countFragmentable++;
 
             // Get the inode of the file
-            struct inode *inode = file_get_inode(file_s);
+            struct inode *fileInode = file_get_inode(currentFile);
             // Get the sectors of the inode
-            block_sector_t *sectors = get_inode_data_sectors(inode);
+            block_sector_t *sectors = get_inode_data_sectors(fileInode);
 
             // Check if the file is fragmented
-            int last_sector = sectors[0];
-            for (int j = 1; j < total_blocks; j++) {
-                int current_sector = sectors[j];
-                // If the difference between the current sector and the last sector is more than 3, the file is fragmented
-                if (current_sector - last_sector > 3) {
-                    fragmented_files++;
+            int previousSector = sectors[0];
+            for (int i = 1; i < totalBlocks; i++) {
+                int currentSector = sectors[i];
+                // If the difference between the current sector and the previous sector is more than 3, the file is fragmented
+                if (currentSector - previousSector > 3) {
+                    countFragmented++;
                     break;
                 }
-                last_sector = current_sector;
+                previousSector = currentSector;
             }
             // Free the sectors array
             free(sectors); 
         }
 
         // Close the file
-        file_close(file_s);
-    }
+        file_close(currentFile);
+    } while (dir_readdir(rootDir, fileName));
 
     // Close the directory
-    dir_close(dir);
+    dir_close(rootDir);
 
     // Print the number of fragmentable files
-    printf("Num fragmentable files: %d\n", fragmentable_files);
-    if (fragmentable_files == 0) {
+    printf("Num fragmentable files: %d\n", countFragmentable);
+    if (countFragmentable == 0) {
         printf("No fragmentable files found.\n");
     } else {
         // Calculate the percentage of fragmented files
-        double fragmentation = (double)fragmented_files / fragmentable_files;
+        double fragmentationPct = (double)countFragmented / countFragmentable;
         // Print the number of fragmented files and the fragmentation percentage
-        printf("Num fragmented files: %d\n", fragmented_files);
-        printf("Fragmentation pct: %.6f\n", fragmentation);
+        printf("Num fragmented files: %d\n", countFragmented);
+        printf("Fragmentation pct: %.6f\n", fragmentationPct);
     }
 }
 
