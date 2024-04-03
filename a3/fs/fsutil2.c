@@ -189,10 +189,6 @@ typedef struct {
 int defragment() {
     // Open the root directory
     struct dir *dir = dir_open_root();
-    struct file *file_s;
-    void *buffer;
-    int i;
-
     FileData *files = NULL;
     size_t file_count = 0;
     char name[NAME_MAX + 1];
