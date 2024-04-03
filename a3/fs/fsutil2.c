@@ -288,9 +288,9 @@ void recover(int flag) {
           }
         }
       }
-    }
     dir_close(dir);
     free(buffer);
+  }
   
   } else if (flag == 2) { // data past end of file.
 
