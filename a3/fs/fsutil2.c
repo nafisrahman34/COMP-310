@@ -229,15 +229,7 @@ int defragment() {
       file_close(file_s);
       return 1; //NO_MEM_SPACE
     }
-
-    //store the current offset of the file and reset offset to 0 to read from the beginning
-    offset_t cur_offset = file_tell(file_s);
-    file_seek(file_s, 0);
-    //read contents of file and store in the buffer 
-    file_read(file_s, buffer, file_size);
-    //restore file pointer offset
-    file_seek(file_s, cur_offset);
-
+    inode_read_at(inode, buffer, file_size, 0);
     strcpy(files[file_count].name, name);
     files[file_count].data = buffer;
     files[file_count].size = file_size;
