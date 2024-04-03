@@ -186,7 +186,6 @@ typedef struct {
 } FileData;
 
 // Function to defragment the file system
-// Function to defragment the file system
 int defragment() {
     // Open the root directory
     struct dir *dir = dir_open_root();
@@ -231,6 +230,17 @@ int defragment() {
         file_count++;
 
         file_close(file_s);
+    }
+
+    // Sort the files by size in descending order using bubble sort
+    for (i = 0; i < file_count - 1; i++) {
+        for (int j = 0; j < file_count - i - 1; j++) {
+            if (files[j].size < files[j + 1].size) {
+                FileData temp = files[j];
+                files[j] = files[j + 1];
+                files[j + 1] = temp;
+            }
+        }
     }
 
     // Step 2: Remove all files
