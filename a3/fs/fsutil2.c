@@ -280,7 +280,15 @@ void recover(int flag) {
         snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
         FILE *fp = fopen(filename, "w");
         if (fp != NULL) {
-          fwrite(buffer, BLOCK_SECTOR_SIZE, 1, fp);
+          // Determine the size of the data in the buffer
+          size_t data_size = BLOCK_SECTOR_SIZE;
+          for (size_t i = 0; i < BLOCK_SECTOR_SIZE; i++) {
+            if (((char*)buffer)[i] == '\0') {
+              data_size = i;
+              break;
+            }
+          }
+          fwrite(buffer, 1, data_size, fp);
           fclose(fp);
         } else {
           printf("Failed to open file: %s\n", filename);
