@@ -160,31 +160,30 @@ int defragment() {
 
 void recover(int flag) {
   if (flag == 0) { // recover deleted inodes
+    struct dir* dir = dir_open_root();
+    struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
+    char filename[NAME_MAX+1];
     long size = bitmap_size(free_map);
     for(int i=0; i<size; i++)
     {
       if(bitmap_test(free_map, i) == false){
-        struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
         buffer_cache_read(i, buffer);
         if(buffer->magic==INODE_MAGIC) {
-          struct dir* dir = dir_open_root();
-          char* filename=malloc(sizeof(char*)*(NAME_MAX+1));
-          snprintf(filename, NAME_MAX+1, "recovered0-%d", i);
+          snprintf(filename, sizeof(filename), "recovered0-%d", i);
           if(dir_add(dir, filename, i, false)){
-            bitmap_flip(free_map, i);
+            bitmap_set(free_map, i, true);
             bitmap_write(free_map, file_open(inode_open(FREE_MAP_SECTOR)));
           }
           else{
             printf("dir_add error\n");
             fflush(stdout);
           }
-          free(filename);
-          dir_close(dir);
         }
-        free(buffer);
       }
     }
-    
+    dir_close(dir);
+    free(buffer);
+
   } else if (flag == 1) { // recover all non-empty sectors
 
     // TODO
