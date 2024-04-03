@@ -333,11 +333,10 @@ void recover(int flag) {
         for (int i = 0; i < block_count; i++) {
             buffer_cache_read(sectors[i], buffer);
             int start_index = (i == block_count - 1) ? file_size % BLOCK_SECTOR_SIZE : BLOCK_SECTOR_SIZE;
-            int end_index = BLOCK_SECTOR_SIZE;
+            int end_index = start_index;
             for (int j = start_index; j < BLOCK_SECTOR_SIZE; j++) {
                 if (((char*)buffer)[j] != '\0') {
-                    end_index = j;
-                    break;
+                    end_index = j + 1;
                 }
             }
             if (start_index != end_index) {
