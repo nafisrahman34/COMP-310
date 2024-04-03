@@ -151,7 +151,7 @@ void fragmentation_degree() {
     } else {
         double fragmentation = (double)fragmented_files / fragmentable_files;
         printf("Num fragmented files: %d\n", fragmented_files);
-        printf("Fragmentation pct: %.6f\n", fragmentation * 100);
+        printf("Fragmentation pct: %.6f\n", fragmentation);
     }
 }
 
