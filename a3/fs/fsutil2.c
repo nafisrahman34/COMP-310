@@ -269,8 +269,27 @@ void recover(int flag) {
     free(buffer);
 
   } else if (flag == 1) { // recover all non-empty sectors
-
-    // TODO
+    struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
+    char filename[NAME_MAX+1];
+    long size = bitmap_size(free_map);
+    for(int i=4; i<size; i++)
+    {
+      if(bitmap_test(free_map, i) == false){
+        buffer_cache_read(i, buffer);
+        if(memcmp(buffer, "\0", BLOCK_SECTOR_SIZE) != 0) {
+          snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
+          FILE *fp = fopen(filename, "w");
+          if (fp != NULL) {
+            fwrite(buffer, BLOCK_SECTOR_SIZE, 1, fp);
+            fclose(fp);
+          } else {
+            printf("Failed to open file: %s\n", filename);
+            fflush(stdout);
+          }
+        }
+      }
+    }
+    free(buffer);
   } else if (flag == 2) { // data past end of file.
 
     // TODO
