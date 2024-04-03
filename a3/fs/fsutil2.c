@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 int copy_in(char *fname) {
   FILE *fp = fopen(fname, "r");
   if(fp == NULL) return -1;
@@ -216,35 +216,35 @@ int defragment() {
     }
 
     // Write the files back to the disk
-for (i = 0; i < file_count; i++) {
-    // Find the index of the largest file
-    int max_index = i;
-    for (int j = i + 1; j < file_count; j++) {
-        if (files[j].size > files[max_index].size) {
-            max_index = j;
+    for (i = 0; i < file_count; i++) {
+        // Find the index of the largest file
+        int max_index = i;
+        for (int j = i + 1; j < file_count; j++) {
+            if (files[j].size > files[max_index].size) {
+                max_index = j;
+            }
         }
-    }
 
-    // Swap the current file with the largest file
-    FileData temp = files[i];
-    files[i] = files[max_index];
-    files[max_index] = temp;
+        // Swap the current file with the largest file
+        FileData temp = files[i];
+        files[i] = files[max_index];
+        files[max_index] = temp;
 
-    // Create and write the current file
-    if (filesys_create(files[i].name, files[i].size, false)) {
-        file_s = filesys_open(files[i].name);
-        if (file_s == NULL) {
-            printf("Failed to open file: %s\n", files[i].name);
+        // Create and write the current file
+        if (filesys_create(files[i].name, files[i].size, false)) {
+            file_s = filesys_open(files[i].name);
+            if (file_s == NULL) {
+                printf("Failed to open file: %s\n", files[i].name);
+                return -1;
+            }
+        } else {
+            printf("Failed to create file: %s\n", files[i].name);
             return -1;
         }
-    } else {
-        printf("Failed to create file: %s\n", files[i].name);
-        return -1;
-    }
 
-    file_write(file_s, files[i].data, files[i].size);
-    file_close(file_s);
-}
+        file_write(file_s, files[i].data, files[i].size);
+        file_close(file_s);
+    }
 
     // Free the memory
     for (i = 0; i < file_count; i++) {
@@ -256,6 +256,7 @@ for (i = 0; i < file_count; i++) {
 
     return 0;
 }
+
 
 void recover(int flag) {
   if (flag == 0) { // recover deleted inodes
@@ -314,7 +315,47 @@ void recover(int flag) {
     free(empty_buffer); 
   
   } else if (flag == 2) { // data past end of file.
+    struct dir* dir = dir_open_root();
+    char filename[NAME_MAX+1];
+    struct file *file_s;
+    struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
+    void* empty_buffer = calloc(1, BLOCK_SECTOR_SIZE);  // create a block of null characters
 
-    // TODO
-  }
+    while (dir_readdir(dir, filename) == true) {
+        file_s = filesys_open(filename);
+        if (file_s == NULL) {
+            continue;
+        }
+
+        off_t file_size = file_length(file_s);
+        int block_count = DIV_ROUND_UP(file_size, BLOCK_SECTOR_SIZE);
+        block_sector_t *sectors = get_inode_data_sectors(file_s->inode);
+        for (int i = 0; i < block_count; i++) {
+            buffer_cache_read(sectors[i], buffer);
+            int start_index = (i == block_count - 1) ? file_size % BLOCK_SECTOR_SIZE : BLOCK_SECTOR_SIZE;
+            for (int j = start_index; j < BLOCK_SECTOR_SIZE; j++) {
+                if (((char*)buffer)[j] != '\0') {
+                    char recovered_filename[NAME_MAX+1];
+                    snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", filename);
+                    FILE *fp = fopen(recovered_filename, "w");
+                    if (fp != NULL) {
+                        fwrite((char*)buffer + start_index, 1, BLOCK_SECTOR_SIZE - start_index, fp);
+                        fclose(fp);
+                    } else {
+                        printf("Failed to open file: %s\n", recovered_filename);
+                        fflush(stdout);
+                    }
+                    break;
+                }
+            }
+        }
+
+        free(sectors);
+        file_close(file_s);
+    }
+
+    dir_close(dir);
+    free(buffer);
+    free(empty_buffer);
+}
 }
