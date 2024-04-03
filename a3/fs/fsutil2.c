@@ -244,11 +244,9 @@ int defragment() {
 }
 
 void recover(int flag) {
-  struct inode_disk* buffer = NULL;
-
   if (flag == 0) { // recover deleted inodes
     struct dir* dir = dir_open_root();
-    buffer = malloc(BLOCK_SECTOR_SIZE);
+    struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
     char filename[NAME_MAX+1];
     long size = bitmap_size(free_map);
     for(int i=0; i<size; i++)
@@ -268,11 +266,11 @@ void recover(int flag) {
       }
     }
     dir_close(dir);
-    
+    free(buffer);
 
   } else if (flag == 1) { // recover all non-empty sectors
     struct dir* dir = dir_open_root();
-    buffer = malloc(BLOCK_SECTOR_SIZE);
+    struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
     char filename[NAME_MAX+1];
     long size = bitmap_size(free_map);
     for(int i=4; i<size; i++)
@@ -290,16 +288,12 @@ void recover(int flag) {
           }
         }
       }
+    }
     dir_close(dir);
-    
-  }
+    free(buffer);
   
   } else if (flag == 2) { // data past end of file.
 
     // TODO
-  }
-  
-  if (buffer != NULL) {
-    free(buffer);
   }
 }
