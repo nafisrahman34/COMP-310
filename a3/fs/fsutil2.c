@@ -116,7 +116,7 @@ void find_file(char *pattern) {
 
 
 // Function to calculate the degree of fragmentation in the file system
-void calculate_fragmentation() {
+void fragmentation_degree() {
     // Open the root directory
     struct dir *rootDir = dir_open_root();
     char fileName[NAME_MAX + 1];
