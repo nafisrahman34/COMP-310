@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define MAX_FILES 1000 
+
 int copy_in(char *fname) {
   FILE *fp = fopen(fname, "r");
   if(fp == NULL) return -1;
@@ -165,29 +165,37 @@ int defragment() {
     struct dir *dir = dir_open_root();
     char name[NAME_MAX + 1];
     struct file *file_s;
-    struct inode *inode;
     int total_blocks;
-    block_sector_t *sectors;
     void *buffer;
     int i;
 
-    // Step 1: Read all files into memory
-    FileData *files = malloc(sizeof(FileData) * MAX_FILES);
+    // Step 1: Count the number of files
     int file_count = 0;
+    while (dir_readdir(dir, name) == true) {
+        file_count++;
+    }
+
+    // Allocate memory for the files array
+    FileData *files = malloc(sizeof(FileData) * file_count);
+
+    // Reset the directory entry
+    dir_reopen(dir);
+
+    // Read all files into memory
+    file_count = 0;
     while (dir_readdir(dir, name) == true) {
         file_s = filesys_open(name);
         if (file_s == NULL) {
             continue;
         }
 
-        inode = file_get_inode(file_s);
         total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
-        sectors = get_inode_data_sectors(inode);
-        buffer = malloc(total_blocks * BLOCK_SECTOR_SIZE);
-
-        for (i = 0; i < total_blocks; i++) {
-            block_read(fs_device, sectors[i], buffer + i * BLOCK_SECTOR_SIZE);
+        if (file_length(file_s) % BLOCK_SECTOR_SIZE != 0) {
+            total_blocks++;
         }
+
+        buffer = malloc(total_blocks * BLOCK_SECTOR_SIZE);
+        file_read(file_s, buffer, total_blocks * BLOCK_SECTOR_SIZE);
 
         strcpy(files[file_count].name, name);
         files[file_count].data = buffer;
@@ -197,7 +205,8 @@ int defragment() {
         file_close(file_s);
     }
 
-    // Step 2: Clear the disk
+    // Clear the disk
+    dir_reopen(dir);
     while (dir_readdir(dir, name) == true) {
         if (!filesys_remove(name)) {
             printf("Failed to remove file: %s\n", name);
@@ -205,7 +214,7 @@ int defragment() {
         }
     }
 
-    // Step 3: Write the files back to the disk
+    // Write the files back to the disk
     for (i = 0; i < file_count; i++) {
         if (filesys_create(files[i].name, files[i].size, false)) {
             file_s = filesys_open(files[i].name);
@@ -222,7 +231,15 @@ int defragment() {
         file_close(file_s);
     }
 
+    // Free the memory
+    for (i = 0; i < file_count; i++) {
+        free(files[i].data);
+    }
+    free(files);
+
     dir_close(dir);
+
+    return 0;
 }
 
 void recover(int flag) {
