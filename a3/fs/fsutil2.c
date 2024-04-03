@@ -216,21 +216,35 @@ int defragment() {
     }
 
     // Write the files back to the disk
-    for (i = 0; i < file_count; i++) {
-        if (filesys_create(files[i].name, files[i].size, false)) {
-            file_s = filesys_open(files[i].name);
-            if (file_s == NULL) {
-                printf("Failed to open file: %s\n", files[i].name);
-                return -1;
-            }
-        } else {
-            printf("Failed to create file: %s\n", files[i].name);
+for (i = 0; i < file_count; i++) {
+    // Find the index of the largest file
+    int max_index = i;
+    for (int j = i + 1; j < file_count; j++) {
+        if (files[j].size > files[max_index].size) {
+            max_index = j;
+        }
+    }
+
+    // Swap the current file with the largest file
+    FileData temp = files[i];
+    files[i] = files[max_index];
+    files[max_index] = temp;
+
+    // Create and write the current file
+    if (filesys_create(files[i].name, files[i].size, false)) {
+        file_s = filesys_open(files[i].name);
+        if (file_s == NULL) {
+            printf("Failed to open file: %s\n", files[i].name);
             return -1;
         }
-
-        file_write(file_s, files[i].data, files[i].size);
-        file_close(file_s);
+    } else {
+        printf("Failed to create file: %s\n", files[i].name);
+        return -1;
     }
+
+    file_write(file_s, files[i].data, files[i].size);
+    file_close(file_s);
+}
 
     // Free the memory
     for (i = 0; i < file_count; i++) {
