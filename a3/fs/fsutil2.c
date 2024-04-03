@@ -333,19 +333,23 @@ void recover(int flag) {
         for (int i = 0; i < block_count; i++) {
             buffer_cache_read(sectors[i], buffer);
             int start_index = (i == block_count - 1) ? file_size % BLOCK_SECTOR_SIZE : BLOCK_SECTOR_SIZE;
+            int end_index = BLOCK_SECTOR_SIZE;
             for (int j = start_index; j < BLOCK_SECTOR_SIZE; j++) {
                 if (((char*)buffer)[j] != '\0') {
-                    char recovered_filename[NAME_MAX+1];
-                    snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", filename);
-                    FILE *fp = fopen(recovered_filename, "w");
-                    if (fp != NULL) {
-                        fwrite((char*)buffer + start_index, 1, BLOCK_SECTOR_SIZE - start_index, fp);
-                        fclose(fp);
-                    } else {
-                        printf("Failed to open file: %s\n", recovered_filename);
-                        fflush(stdout);
-                    }
+                    end_index = j;
                     break;
+                }
+            }
+            if (start_index != end_index) {
+                char recovered_filename[NAME_MAX+1];
+                snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", filename);
+                FILE *fp = fopen(recovered_filename, "w");
+                if (fp != NULL) {
+                    fwrite((char*)buffer + start_index, 1, end_index - start_index, fp);
+                    fclose(fp);
+                } else {
+                    printf("Failed to open file: %s\n", recovered_filename);
+                    fflush(stdout);
                 }
             }
         }
