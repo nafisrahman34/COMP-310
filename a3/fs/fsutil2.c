@@ -172,7 +172,6 @@ void recover(int flag) {
           snprintf(filename, sizeof(filename), "recovered0-%d", i);
           if(dir_add(dir, filename, i, false)){
             bitmap_set(free_map, i, true);
-            bitmap_write(free_map, file_open(inode_open(FREE_MAP_SECTOR)));
           }
           else{
             printf("dir_add error\n");
