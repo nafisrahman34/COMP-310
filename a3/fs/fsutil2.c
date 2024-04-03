@@ -203,6 +203,20 @@ int defragment() {
   // Step 1: Read all files into memory
   file_count = 0;
   while (dir_readdir(dir, name) == true) {
+
+    struct inode *inode = NULL;
+    if (!dir_lookup(dir, name, &inode))
+    {
+      continue; // Skip if the file is not found
+    }
+    if (inode_is_directory(inode))
+    {
+      inode_close(inode);
+      continue; // Skip directories
+    }
+
+
+
     file_s = filesys_open(name);
     if (file_s == NULL) {
       return -1; //FILE_DOES_NOT_EXIST
