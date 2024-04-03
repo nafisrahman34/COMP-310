@@ -156,8 +156,57 @@ void fragmentation_degree() {
 }
 
 int defragment() {
-  // TODO
-  return 0;
+    struct dir *dir = dir_open_root();
+    char name[NAME_MAX + 1];
+    struct file *file_s;
+    struct inode *inode;
+    int total_blocks;
+    block_sector_t *sectors;
+    void *buffer;
+    int i;
+
+    // Step 1: Read all files into memory
+    while (dir_readdir(dir, name) == true) {
+        file_s = filesys_open(name);
+        if (file_s == NULL) {
+            continue;
+        }
+
+        inode = file_get_inode(file_s);
+        total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
+        sectors = get_inode_data_sectors(inode);
+        buffer = malloc(total_blocks * BLOCK_SECTOR_SIZE);
+
+        for (i = 0; i < total_blocks; i++) {
+            block_read(fs_device, sectors[i], buffer + i * BLOCK_SECTOR_SIZE);
+        }
+
+        file_close(file_s);
+    }
+
+    // Step 2: Clear the disk
+    // TODO:
+
+    // Step 3: Write the files back to the disk
+    while (dir_readdir(dir, name) == true) {
+        file_s = filesys_open(name);
+        if (file_s == NULL) {
+            continue;
+        }
+
+        inode = file_get_inode(file_s);
+        total_blocks = file_length(file_s) / BLOCK_SECTOR_SIZE;
+        sectors = get_inode_data_sectors(inode);
+
+        for (i = 0; i < total_blocks; i++) {
+            block_write(fs_device, sectors[i], buffer + i * BLOCK_SECTOR_SIZE);
+        }
+
+        file_close(file_s);
+    }
+
+    dir_close(dir);
+    return 0;
 }
 
 void recover(int flag) {
