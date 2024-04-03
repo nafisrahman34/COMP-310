@@ -158,7 +158,7 @@ void fragmentation_degree() {
 typedef struct {
     char name[NAME_MAX + 1];
     void *data;
-    int size;
+    off_t size;
 } FileData;
 
 int defragment() {
@@ -188,7 +188,7 @@ int defragment() {
             continue;
         }
 
-        int file_size = file_length(file_s);
+        off_t file_size = file_length(file_s);
         buffer = malloc(file_size);
         if (buffer == NULL) {
             printf("Failed to allocate memory for file: %s\n", name);
