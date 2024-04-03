@@ -184,8 +184,13 @@ int defragment() {
         file_close(file_s);
     }
 
-    // Step 2: Clear the disk
-    // TODO:
+        // Step 2: Clear the disk
+    while (dir_readdir(dir, name) == true) {
+        if (!filesys_remove(name)) {
+            printf("Failed to remove file: %s\n", name);
+            return -1;
+        }
+    }
 
     // Step 3: Write the files back to the disk
     while (dir_readdir(dir, name) == true) {
