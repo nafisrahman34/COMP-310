@@ -168,8 +168,8 @@ void recover(int flag) {
         buffer_cache_read(i, buffer);
         if(buffer->magic==INODE_MAGIC) {
           struct dir* dir = dir_open_root();
-          char* filename=malloc(sizeof(char*)*NAME_MAX);
-          snprintf(filename, NAME_MAX, "recovered0-%d", i);
+          char* filename=malloc(sizeof(char*)*(NAME_MAX+1));
+          snprintf(filename, NAME_MAX+1, "recovered0-%d", i);
           if(dir_add(dir, filename, i, false)){
             bitmap_flip(free_map, i);
             bitmap_write(free_map, file_open(inode_open(FREE_MAP_SECTOR)));
@@ -178,7 +178,9 @@ void recover(int flag) {
             printf("dir_add error\n");
             fflush(stdout);
           }
+          free(filename);
         }
+        free(buffer);
       }
     }
     
