@@ -179,6 +179,7 @@ void recover(int flag) {
             fflush(stdout);
           }
           free(filename);
+          dir_close(dir);
         }
         free(buffer);
       }
