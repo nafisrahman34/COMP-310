@@ -270,13 +270,14 @@ void recover(int flag) {
 
   } else if (flag == 1) { // recover all non-empty sectors
     struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
+    void* empty_buffer = calloc(1, BLOCK_SECTOR_SIZE);  // create a block of null characters
     char filename[NAME_MAX+1];
     long size = bitmap_size(free_map);
     for(int i=4; i<size; i++)
     {
       if(bitmap_test(free_map, i) == false){
         buffer_cache_read(i, buffer);
-        if(memcmp(buffer, "\0", BLOCK_SECTOR_SIZE) != 0) {
+        if(memcmp(buffer, empty_buffer, BLOCK_SECTOR_SIZE) != 0) {  // compare with the block of null characters
           snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
           FILE *fp = fopen(filename, "w");
           if (fp != NULL) {
@@ -290,6 +291,8 @@ void recover(int flag) {
       }
     }
     free(buffer);
+    free(empty_buffer);  // free the block of null characters
+  
   } else if (flag == 2) { // data past end of file.
 
     // TODO
