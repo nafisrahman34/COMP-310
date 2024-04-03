@@ -189,91 +189,67 @@ typedef struct {
 int defragment() {
     // Open the root directory
     struct dir *dir = dir_open_root();
-    char name[NAME_MAX + 1];
     struct file *file_s;
     void *buffer;
     int i;
 
-    // Count the number of files in the root directory
-    int file_count = 0;
-    while (dir_readdir(dir, name) == true) {
-        file_count++;
-    }
+    FileData *files = NULL;
+    size_t file_count = 0;
+    char name[NAME_MAX + 1];
 
-    // Allocate memory to hold data for all files
-    FileData *files = malloc(sizeof(FileData) * file_count);
+    while (dir_readdir(dir, name)) {
+        struct inode *inode = NULL;
+        if (!dir_lookup(dir, name, &inode)) {
+            continue;
+        }
+        if (inode_is_directory(inode)) {
+            inode_close(inode);
+            continue; 
+        }
 
-    // Reset the directory entry to start reading from the beginning
-    dir_reopen(dir);
-
-    // Step 1: Read all files into memory
-    file_count = 0;
-    while (dir_readdir(dir, name) == true) {
-        file_s = filesys_open(name);
-        if (file_s == NULL) {
+        printf("Backing up file: %s\n", name);
+        off_t file_size = inode_length(inode);
+        char *buffer = malloc(file_size);
+        if (!buffer) {
+            printf("Failed to allocate memory for backup: %s\n", name);
+            inode_close(inode);
             continue;
         }
 
-        off_t file_size = file_length(file_s);
-        buffer = malloc(file_size);
-        if (buffer == NULL) {
-            printf("Failed to allocate memory for file: %s\n", name);
-            file_close(file_s);
-            continue;
-        }
-
-        file_read(file_s, buffer, file_size);
-
-        strcpy(files[file_count].name, name);
+        inode_read_at(inode, buffer, file_size, 0);
+        files = realloc(files, sizeof(FileData) * (file_count + 1));
         files[file_count].data = buffer;
         files[file_count].size = file_size;
+        strncpy(files[file_count].name, name, NAME_MAX);
         file_count++;
 
-        file_close(file_s);
-    }
-
-    // Sort the files by size in descending order using bubble sort
-    for (i = 0; i < file_count - 1; i++) {
-        for (int j = 0; j < file_count - i - 1; j++) {
-            if (files[j].size < files[j + 1].size) {
-                FileData temp = files[j];
-                files[j] = files[j + 1];
-                files[j + 1] = temp;
-            }
-        }
-    }
-
-    // Step 2: Remove all files
-    dir_reopen(dir);
-    while (dir_readdir(dir, name) == true) {
+        inode_close(inode); 
+        printf("Removing file: %s\n", name);
         fsutil_rm(name);
     }
 
-    // Step 3: Create all files again and write the data from the buffer to each
-    for (i = 0; i < file_count; i++) {
+    dir_close(dir);
+
+    for (size_t i = 0; i < file_count; i++) {
+        fsutil_rm(files[i].name);
+    }
+
+    for (size_t i = 0; i < file_count; i++) {
+        printf("Restoring file: %s\n", files[i].name);
         if (fsutil_create(files[i].name, files[i].size)) {
-            file_s = filesys_open(files[i].name);
-            if (file_s == NULL) {
-                printf("Failed to open file: %s\n", files[i].name);
-                return -1;
+            if (fsutil_write(files[i].name, files[i].data, files[i].size) != -1) {
+                printf("File %s restored successfully.\n", files[i].name);
+            } else {
+                printf("Failed to write data %s.\n", files[i].name);
             }
         } else {
-            printf("Failed to create file: %s\n", files[i].name);
-            return -1;
+            printf("Failed file creation %s.\n", files[i].name);
         }
 
-        fsutil_write(files[i].name, files[i].data, files[i].size);
-        file_close(file_s);
-    }
-
-    // Free the memory used to hold the file data
-    for (i = 0; i < file_count; i++) {
         free(files[i].data);
     }
-    free(files);
 
-    // Close the directory
-    dir_close(dir);
+    free(files); 
 
     return 0;
 }
