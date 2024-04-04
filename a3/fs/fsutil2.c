@@ -188,37 +188,44 @@ int defragment() {
   char name[NAME_MAX + 1];
 
   //put all files into the FileData struct we defined
- 
-    while (dir_readdir(dir, name)) {
-        // Retrieve inode for current file/directory
-        struct inode *inode = NULL;
-        if (dir_lookup(dir, name, &inode) && !inode_is_directory(inode)) {
-            // Get file size
-            off_t file_size = inode_length(inode);
-            // Create buffer to store file content
-            char *buffer = malloc(file_size);
-            if (buffer) {
-                // Read file contents into the buffer we allocated
-                inode_read_at(inode, buffer, file_size, 0);
-                // Make space in files array for next file
-                files = realloc(files, sizeof(FileData) * (file_count + 1));
-                // Store current file details in the files array
-                files[file_count].data = buffer;
-                files[file_count].size = file_size;
-                strncpy(files[file_count].name, name, NAME_MAX);
-                file_count++;
-                // Close inode and remove the current file from disk once stored in files array
-                fsutil_rm(name);
-            } else {
-                printf("Failed to allocate memory for backup: %s\n", name);
-                inode_close(inode);
-                return 1; // NO_MEM_SPACE
-            }
-        }
-        if (inode) {
-            inode_close(inode);
-        }
+  while (dir_readdir(dir, name)) {
+    //retrieve inode for current file/directory
+    struct inode *inode = NULL;
+
+    if (inode_is_directory(inode)) {
+      //skip if we're reading a directory
+      inode_close(inode);
+      continue; 
     }
+
+    if (!dir_lookup(dir, name, &inode)) {
+      continue;
+    }
+    
+    //get file size
+    off_t file_size = inode_length(inode);
+    //create buffer to store file content
+    char *buffer = malloc(file_size);
+      if (buffer) {
+        //read file contents into the buffer we allocated
+      inode_read_at(inode, buffer, file_size, 0);
+      //make space in files array for next file
+      files = realloc(files, sizeof(FileData) * (file_count + 1));
+      //store current file details in the files array
+      files[file_count].data = buffer;
+      files[file_count].size = file_size;
+      strncpy(files[file_count].name, name, NAME_MAX);
+      file_count++;
+      //close inode and remove the current file from disk once stored in files array
+      inode_close(inode);
+      fsutil_rm(name);
+      }
+      else {
+        printf("Failed to allocate memory for backup: %s\n", name);
+        inode_close(inode);
+        return 1; //NO_MEM_SPACE
+      }
+  }
   dir_close(dir);
   //iterate through files array re-writing every file that was in the disk
   for (size_t i = 0; i < file_count; i++) {
