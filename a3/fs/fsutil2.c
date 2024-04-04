@@ -181,67 +181,84 @@ typedef struct {
 
 // Function to defragment the file system
 int defragment() {
-    // Open the root directory
-    struct dir *dir = dir_open_root();
-    FileData *files = NULL;
-    size_t file_count = 0;
-    char name[NAME_MAX + 1];
-
-    while (dir_readdir(dir, name)) {
-        struct inode *inode = NULL;
-        if (!dir_lookup(dir, name, &inode)) {
-            continue;
-        }
-        if (inode_is_directory(inode)) {
-            inode_close(inode);
-            continue; 
-        }
-
-        printf("Backing up file: %s\n", name);
-        off_t file_size = inode_length(inode);
-        char *buffer = malloc(file_size);
-        if (!buffer) {
-            printf("Failed to allocate memory for backup: %s\n", name);
-            inode_close(inode);
-            continue;
-        }
-
-        inode_read_at(inode, buffer, file_size, 0);
-        files = realloc(files, sizeof(FileData) * (file_count + 1));
-        files[file_count].data = buffer;
-        files[file_count].size = file_size;
-        strncpy(files[file_count].name, name, NAME_MAX);
-        file_count++;
-
-        inode_close(inode); 
-        printf("Removing file: %s\n", name);
-        fsutil_rm(name);
+  // Open the root directory
+  struct dir *dir = dir_open_root();
+  char name[NAME_MAX + 1];
+  struct file *file_s;
+  // Count the number of files in the root directory
+  int file_count = 0;
+  while (dir_readdir(dir, name) == true) {
+    file_count++;
+  }
+  // Allocate memory to hold data for all files
+  FileData *files = malloc(sizeof(FileData) * file_count);
+  // Reset the directory entry to start reading from the beginning
+  dir_reopen(dir);
+  // Step 1: Read all files into memory
+  file_count = 0;
+  while (dir_readdir(dir, name) == true) {
+    struct inode *inode = NULL;
+    if (!dir_lookup(dir, name, &inode))
+    {
+      continue; // Skip if the file is not found
     }
-
-    dir_close(dir);
-
-    for (size_t i = 0; i < file_count; i++) {
-        fsutil_rm(files[i].name);
+    if (inode_is_directory(inode)) {
+      inode_close(inode);
+      continue; // Skip directories
     }
-
-    for (size_t i = 0; i < file_count; i++) {
-        printf("Restoring file: %s\n", files[i].name);
-        if (fsutil_create(files[i].name, files[i].size)) {
-            if (fsutil_write(files[i].name, files[i].data, files[i].size) != -1) {
-                printf("File %s restored successfully.\n", files[i].name);
-            } else {
-                printf("Failed to write data %s.\n", files[i].name);
-            }
-        } else {
-            printf("Failed file creation %s.\n", files[i].name);
+    file_s = filesys_open(name);
+    if (file_s == NULL) {
+      return -1; //FILE_DOES_NOT_EXIST
+    }
+    size_t file_size = file_length(file_s);
+    char *buffer = malloc(file_size);
+    if (buffer == NULL) {
+      printf("Failed to allocate memory for file: %s\n", name);
+      file_close(file_s);
+      return 1; //NO_MEM_SPACE
+    }
+    inode_read_at(inode, buffer, file_size, 0);
+    strncpy(files[file_count].name, name, NAME_MAX);
+    files[file_count].data = buffer;
+    files[file_count].size = file_size;
+    file_count++;
+    inode_close(inode);
+    file_close(file_s);
+    // Step 2: Remove each file after adding to buffer
+    fsutil_rm(name);
+  }
+  dir_close(dir);
+  // Step 3: Create all files again and write the data from the buffer to each
+  for (int i = 0; i < file_count; i++) {
+    if (fsutil_create(files[i].name, files[i].size)) {
+      file_s = filesys_open(files[i].name);
+      if (file_s == NULL) {
+        printf("Failed to open file: %s\n", files[i].name);
+        return -1; //FILE_DOES_NOT_EXIST
+      }
+      else {
+        if (fsutil_write(files[i].name, files[i].data, files[i].size) != -1) {
+          printf("File restored successfully: %s\n", files[i].name);
         }
-
-        free(files[i].data);
+        else {
+          printf("Failed to write to file: %s.\n", files[i].name);
+          return 11;
+        }
+      }
+      file_close(file_s);
     }
-
-    free(files); 
-
-    return 0;
+    else {
+      printf("File creation failed: %s\n", files[i].name);
+      return 9; //FILE_CREATION_ERROR
+    }
+    // Free the memory used to hold the file data
+    free(files[i].data);
+  }
+  //free memory allocated for FileData array
+  free(files);
+  // Close the directory
+  dir_close(dir);
+  return 0;
 }
 
 
