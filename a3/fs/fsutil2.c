@@ -280,21 +280,29 @@ void recover(int flag) {
         dir_close(dir);
     } 
     else if (flag == 1) { // Recover all non-empty sectors
-        for(int i=4; i<size; i++) {
-            buffer_cache_read(i, buffer);
-            if(memcmp(buffer, empty_buffer, BLOCK_SECTOR_SIZE) != 0) {
-                snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
-                FILE *fp = fopen(filename, "w");
-                if (fp != NULL) {
-                    fwrite(buffer, 1, BLOCK_SECTOR_SIZE, fp);
-                    fclose(fp);
-                } else {
-                    printf("Failed to open file: %s\n", filename);
-                    fflush(stdout);
+    for(int i=4; i<size; i++) {
+        buffer_cache_read(i, buffer);
+        if(memcmp(buffer, empty_buffer, BLOCK_SECTOR_SIZE) != 0) {
+            snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
+            FILE *fp = fopen(filename, "w");
+            if (fp != NULL) {
+                // Determine the size of the data in the buffer
+                size_t data_size = BLOCK_SECTOR_SIZE;
+                for (size_t i = 0; i < BLOCK_SECTOR_SIZE; i++) {
+                    if (((char*)buffer)[i] == '\0') {
+                        data_size = i;
+                        break;
+                    }
                 }
+                fwrite(buffer, 1, data_size, fp);
+                fclose(fp);
+            } else {
+                printf("Failed to open file: %s\n", filename);
+                fflush(stdout);
             }
         }
-    } 
+    }
+}
     else if (flag == 2) { // Recover data past end of file
         struct dir* dir = dir_open_root();
         while (dir_readdir(dir, filename)) {
