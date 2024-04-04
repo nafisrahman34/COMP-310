@@ -331,8 +331,7 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
     if (args_size != 1)
       return handle_error(TOO_MANY_TOKENS);
     int status = defragment();
-    if(status == -1) return handle_error(FILE_DOES_NOT_EXIST);
-    if(status>0) return handle_error(status);
+    if(status!=0) return handle_error(status);
     return 0;
   } else if (strcmp(command_args[0], "recover") == 0) { // rm
     if (args_size != 2)
