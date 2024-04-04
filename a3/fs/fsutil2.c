@@ -191,17 +191,14 @@ int defragment() {
   while (dir_readdir(dir, name)) {
     //retrieve inode for current file/directory
     struct inode *inode = NULL;
-    
+    if (!dir_lookup(dir, name, &inode)) {
+      continue;
+    }
     if (inode_is_directory(inode)) {
       //skip if we're reading a directory
       inode_close(inode);
       continue; 
     }
-
-    if (!dir_lookup(dir, name, &inode)) {
-      continue;
-    }
-    
     //get file size
     off_t file_size = inode_length(inode);
     //create buffer to store file content
