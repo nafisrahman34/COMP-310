@@ -14,9 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define division(a, b) (((a) + (b) - 1) / (b))
+
 //declare helper we will use later 
-void recover_past_end_of_file(struct file *file_s, struct inode_disk* buffer, char* filename);
+void recover_past_end(struct file *file_s, struct inode_disk* buffer, char* filename);
+
 int copy_in(char *fname) {
   FILE *fp = fopen(fname, "r");
   if(fp == NULL) return -1;
@@ -163,7 +165,7 @@ void fragmentation_degree() {
     //print all statements necessary
     printf("Num fragmentable files: %d\n", countFragmentable);
     if (countFragmentable == 0) {
-        printf("No fragmentable files were found.\n");
+        printf("No fragmentable files\n");
     } else {
         //percentage of fragmented files 
         double fragmentationPct = (double)countFragmented / countFragmentable;
@@ -240,7 +242,7 @@ int defragment() {
       if (fsutil_write(files[x].name, files[x].data, files[x].size) == -1) 
         return 11; //FILE_WRITE_ERROR
     } else {
-      return 9; //FILE_CREATION ERROR
+        return 9; //FILE_CREATION ERROR
     }
     free(files[x].data);
   }
@@ -250,28 +252,34 @@ int defragment() {
 }
 
 
-// Function to recover data based on the given flag
+//recover function based on flag given 
 void recover(int flag) {
-    // Buffer to hold inode data
+    //declare buffer that will hold inode data
     struct inode_disk* buffer = malloc(BLOCK_SECTOR_SIZE);
-    // Buffer to hold file names
+    //buffer for file names
     char filename[NAME_MAX+1];
-    // Buffer to hold empty data
-    void* empty_buffer = calloc(1, BLOCK_SECTOR_SIZE);
-    // Size of the free map
+    //buffer for empty data
+    void* emptyBuffer = calloc(1, BLOCK_SECTOR_SIZE);
+    //map size
     long size = bitmap_size(free_map);
 
-    if (flag == 0) { // Recover deleted inodes
+    if (flag == 0) { //first flag is to recover deleted files
         struct dir* dir = dir_open_root();
+        //go through all sectors
         for(int i=0; i<size; i++) {
+            //sector not being used
             if(!bitmap_test(free_map, i)) {
+                //load sector in designated buffer
                 buffer_cache_read(i, buffer);
+                //check for inode
                 if(buffer->magic==INODE_MAGIC) {
+                    //if we have inode then add file to directory
                     snprintf(filename, sizeof(filename), "recovered0-%d", i);
                     if(dir_add(dir, filename, i, false)) {
+                        //set sector as used
                         bitmap_set(free_map, i, true);
                     } else {
-                        printf("dir_add error\n");
+                        printf("Could not add directory\n");
                         fflush(stdout);
                     }
                 }
@@ -279,77 +287,91 @@ void recover(int flag) {
         }
         dir_close(dir);
     } 
-    else if (flag == 1) { // Recover all non-empty sectors
-    for(int i=4; i<size; i++) {
-        buffer_cache_read(i, buffer);
-        if(memcmp(buffer, empty_buffer, BLOCK_SECTOR_SIZE) != 0) {
-            snprintf(filename, sizeof(filename), "recovered1-%d.txt", i);
+
+    else if (flag == 1) { //second flag to recover non-zeroed out data blocks
+    //start at sector 4 as mentioned in the instructions
+    for(int x=4; x<size; x++) {
+        buffer_cache_read(x, buffer);
+        //check if sector not empty
+        if(memcmp(buffer, emptyBuffer, BLOCK_SECTOR_SIZE) != 0) {
+            //then can create file and write to it after determining size of data
+            snprintf(filename, sizeof(filename), "recovered1-%d.txt", x);
             FILE *fp = fopen(filename, "w");
             if (fp != NULL) {
-                // Determine the size of the data in the buffer
-                size_t data_size = BLOCK_SECTOR_SIZE;
-                for (size_t i = 0; i < BLOCK_SECTOR_SIZE; i++) {
-                    if (((char*)buffer)[i] == '\0') {
-                        data_size = i;
+                size_t dataSize = BLOCK_SECTOR_SIZE;
+                for (size_t x = 0; x < BLOCK_SECTOR_SIZE; x++) {
+                    //update size when null character is found
+                    if (((char*)buffer)[x] == '\0') {
+                        dataSize = x;
                         break;
                     }
                 }
-                fwrite(buffer, 1, data_size, fp);
+                fwrite(buffer, 1, dataSize, fp);
                 fclose(fp);
             } else {
-                printf("Failed to open file: %s\n", filename);
+                printf("Could not open file: %s\n", filename);
                 fflush(stdout);
             }
         }
     }
 }
-    else if (flag == 2) { // Recover data past end of file
+    else if (flag == 2) { //finding data hidden past the end of a current file
         struct dir* dir = dir_open_root();
+        //iterate as long as there are files in directory
         while (dir_readdir(dir, filename)) {
             struct file *file_s = filesys_open(filename);
             if (file_s != NULL) {
-                recover_past_end_of_file(file_s, buffer, filename);
+                //helper function
+                recover_past_end(file_s, buffer, filename);
                 file_close(file_s);
             }
         }
         dir_close(dir);
     }
 
-    // Free allocated memory
     free(buffer);
-    free(empty_buffer);
+    free(emptyBuffer);
 }
 
-// Function to recover data past end of file
-void recover_past_end_of_file(struct file *file_s, struct inode_disk* buffer, char* filename) {
-    off_t file_size = file_length(file_s);
-    int block_count = DIV_ROUND_UP(file_size, BLOCK_SECTOR_SIZE);
+//helper function
+void recover_past_end(struct file *file_s, struct inode_disk* buffer, char* filename) {
+    //size of file
+    off_t fileSize = file_length(file_s);
+    //total blocks in file
+    int blockCount = division(fileSize, BLOCK_SECTOR_SIZE);
     block_sector_t *sectors = get_inode_data_sectors(file_s->inode);
-    for (int i = 0; i < block_count; i++) {
-        buffer_cache_read(sectors[i], buffer);
-        int start_index = (i == block_count - 1) ? file_size % BLOCK_SECTOR_SIZE : BLOCK_SECTOR_SIZE;
-        int end_index = start_index;
-        for (int j = start_index; j < BLOCK_SECTOR_SIZE; j++) {
-            if (((char*)buffer)[j] != '\0') {
-                start_index = j;
-                end_index = j + 1;
+    //iterate through all blocks
+    for (int x = 0; x < blockCount; x++) {
+        buffer_cache_read(sectors[x], buffer);
+        //find start and end index of data
+        int start = (x == blockCount - 1) ? fileSize % BLOCK_SECTOR_SIZE : BLOCK_SECTOR_SIZE;
+        int end = start;
+        for (int y = start; y < BLOCK_SECTOR_SIZE; y++) {
+            //character not null so update start and end index again
+            if (((char*)buffer)[y] != '\0') {
+                start = y;
+                end = y + 1;
                 break;
             }
         }
-        for (int j = start_index + 1; j < BLOCK_SECTOR_SIZE; j++) {
-            if (((char*)buffer)[j] != '\0') {
-                end_index = j + 1;
+        for (int z = start + 1; z < BLOCK_SECTOR_SIZE; z++) {
+            //update only end here if character not null
+            if (((char*)buffer)[z] != '\0') {
+                end = z + 1;
             }
         }
-        if (start_index != end_index) {
-            char recovered_filename[NAME_MAX+1];
-            snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", filename);
-            FILE *fp = fopen(recovered_filename, "w");
+        //data past end of file
+        if (start != end) {
+          //create file
+            char recovered_file[NAME_MAX+1];
+            snprintf(recovered_file, sizeof(recovered_file), "recovered2-%s.txt", filename);
+            FILE *fp = fopen(recovered_file, "w");
             if (fp != NULL) {
-                fwrite((char*)buffer + start_index, 1, end_index - start_index, fp);
+                //write data to file
+                fwrite((char*)buffer + start, 1, end - start, fp);
                 fclose(fp);
             } else {
-                printf("Failed to open file: %s\n", recovered_filename);
+                printf("Could not open file: %s\n", recovered_file);
                 fflush(stdout);
             }
         }
