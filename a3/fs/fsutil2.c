@@ -181,67 +181,62 @@ typedef struct {
 
 // Function to defragment the file system
 int defragment() {
-    // Open the root directory
-    struct dir *dir = dir_open_root();
-    FileData *files = NULL;
-    size_t file_count = 0;
-    char name[NAME_MAX + 1];
-
-    while (dir_readdir(dir, name)) {
-        struct inode *inode = NULL;
-        if (!dir_lookup(dir, name, &inode)) {
-            continue;
-        }
-        if (inode_is_directory(inode)) {
-            inode_close(inode);
-            continue; 
-        }
-
-        printf("Backing up file: %s\n", name);
-        off_t file_size = inode_length(inode);
-        char *buffer = malloc(file_size);
-        if (!buffer) {
-            printf("Failed to allocate memory for backup: %s\n", name);
-            inode_close(inode);
-            continue;
-        }
-
-        inode_read_at(inode, buffer, file_size, 0);
-        files = realloc(files, sizeof(FileData) * (file_count + 1));
-        files[file_count].data = buffer;
-        files[file_count].size = file_size;
-        strncpy(files[file_count].name, name, NAME_MAX);
-        file_count++;
-
-        inode_close(inode); 
-        printf("Removing file: %s\n", name);
-        fsutil_rm(name);
+  // Open the root directory
+  struct dir *dir = dir_open_root();
+  //initialize variables
+  FileData *files = NULL;
+  size_t file_count = 0;
+  char name[NAME_MAX + 1];
+  //Put all files into the FileData struct we defined
+  while (dir_readdir(dir, name)) {
+    //retrieve inode for current file/directory
+    struct inode *inode = NULL;
+    if (!dir_lookup(dir, name, &inode)) {
+      continue;
     }
-
-    dir_close(dir);
-
-    for (size_t i = 0; i < file_count; i++) {
-        fsutil_rm(files[i].name);
+    if (inode_is_directory(inode)) {
+      //skip if we're reading a directory
+      inode_close(inode);
+      continue; 
     }
-
-    for (size_t i = 0; i < file_count; i++) {
-        printf("Restoring file: %s\n", files[i].name);
-        if (fsutil_create(files[i].name, files[i].size)) {
-            if (fsutil_write(files[i].name, files[i].data, files[i].size) != -1) {
-                printf("File %s restored successfully.\n", files[i].name);
-            } else {
-                printf("Failed to write data %s.\n", files[i].name);
-            }
-        } else {
-            printf("Failed file creation %s.\n", files[i].name);
-        }
-
-        free(files[i].data);
+    //get file size
+    off_t file_size = inode_length(inode);
+    //create buffer to store file content
+    char *buffer = malloc(file_size);
+      if (!buffer) {
+        printf("Failed to allocate memory for backup: %s\n", name);
+        inode_close(inode);
+        return 1; //NO_MEM_SPACE
+      }
+      //read file contents into the buffer we allocated
+      inode_read_at(inode, buffer, file_size, 0);
+      //make space in files array for next file
+      files = realloc(files, sizeof(FileData) * (file_count + 1));
+      //store current file details in the files array
+      files[file_count].data = buffer;
+      files[file_count].size = file_size;
+      strncpy(files[file_count].name, name, NAME_MAX);
+      file_count++;
+      //close inode and remove the current file from disk once stored in files array
+      inode_close(inode);
+      fsutil_rm(name);
+  }
+  dir_close(dir);
+  //iterate through files array re-writing every file that was in the disk
+  for (size_t i = 0; i < file_count; i++) {
+    //recreate the file on disk from the files array
+    if (fsutil_create(files[i].name, files[i].size)) {
+    //populate the file with its respective contents
+      if (fsutil_write(files[i].name, files[i].data, files[i].size) == -1) 
+        return 11; //FILE_WRITE_ERROR
+    } else {
+      return 9; //FILE_CREATION ERROR
     }
-
-    free(files); 
-
-    return 0;
+    free(files[i].data);
+  }
+  //free the space allocated for the files array
+  free(files); 
+  return 0;
 }
 
 
