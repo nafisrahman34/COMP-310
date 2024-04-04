@@ -191,24 +191,24 @@ int defragment() {
   while (dir_readdir(dir, name)) {
     //retrieve inode for current file/directory
     struct inode *inode = NULL;
+
     if (!dir_lookup(dir, name, &inode)) {
       continue;
     }
+    
     if (inode_is_directory(inode)) {
       //skip if we're reading a directory
       inode_close(inode);
       continue; 
     }
+    
+    
     //get file size
     off_t file_size = inode_length(inode);
     //create buffer to store file content
     char *buffer = malloc(file_size);
-      if (!buffer) {
-        printf("Failed to allocate memory for backup: %s\n", name);
-        inode_close(inode);
-        return 1; //NO_MEM_SPACE
-      }
-      //read file contents into the buffer we allocated
+      if (buffer) {
+        //read file contents into the buffer we allocated
       inode_read_at(inode, buffer, file_size, 0);
       //make space in files array for next file
       files = realloc(files, sizeof(FileData) * (file_count + 1));
@@ -220,6 +220,12 @@ int defragment() {
       //close inode and remove the current file from disk once stored in files array
       inode_close(inode);
       fsutil_rm(name);
+      }
+      else {
+        printf("Failed to allocate memory for backup: %s\n", name);
+        inode_close(inode);
+        return 1; //NO_MEM_SPACE
+      }
   }
   dir_close(dir);
   //iterate through files array re-writing every file that was in the disk
